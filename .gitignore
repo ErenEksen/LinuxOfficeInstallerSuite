@@ -12,10 +12,11 @@
 *~
 .DS_Store
 
-# Local Claude Code settings
-.claude/settings.local.json
-
 # Stray ImageMagick output
 /info:
 /info:-
 /histogram:info:-
+
+# Claude Code commands and skills, and OpenSpec planning notes (kept locally)
+/.claude/
+/openspec/
