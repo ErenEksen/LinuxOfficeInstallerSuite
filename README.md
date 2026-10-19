@@ -30,6 +30,7 @@ Everything lives under `~/.msoffice/`. Files written elsewhere (launchers, icons
 | Fedora (Fedora, Nobara) | Untested |
 | Debian (Debian, Ubuntu, Mint, Pop!_OS) | Untested |
 | Others | Lists the missing libraries for you to install |
+
 Contributions welcomes!
 
 Enable 32-bit packages first: `[multilib]` on Arch, or `dpkg --add-architecture i386` on Debian/Ubuntu.
