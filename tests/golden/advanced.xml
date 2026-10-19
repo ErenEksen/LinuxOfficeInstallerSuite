@@ -1,0 +1,14 @@
+<Configuration>
+  <Add OfficeClientEdition="32" Channel="Current">
+    <Product ID="O365HomePremRetail">
+      <Language ID="de-de" />
+      <Language ID="en-us" />
+      <ExcludeApp ID="Groove" />
+      <ExcludeApp ID="Lync" />
+      <ExcludeApp ID="Teams" />
+    </Product>
+  </Add>
+  <Display Level="Full" AcceptEULA="TRUE" />
+  <Updates Enabled="TRUE" Channel="Current" />
+  <Logging Level="Off" />
+</Configuration>

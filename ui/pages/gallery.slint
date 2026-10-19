@@ -1,0 +1,152 @@
+// Kit gallery: every component in one page, for visual checks in both themes.
+// Opened with LOIS_GALLERY=1.
+import { Theme, ThemeMode } from "../theme.slint";
+import { Button, AccentButton, CheckBox, RadioButton, ToggleSwitch, LineEdit, ComboBox, ProgressBar } from "../kit/controls.slint";
+import { SettingsCard, Expander, InfoBar, Severity, ContentDialog, ListRow, MenuItem, ScrollArea } from "../kit/layout.slint";
+
+export component GalleryPage inherits Rectangle {
+    in-out property <bool> dialog-open;
+    property <int> radio: 0;
+    property <float> demo-progress: 0.42;
+    property <int> demo-lines: 1;
+    property <string> demo-log: "log line 1";
+
+    Timer {
+        interval: 250ms;
+        running: root.demo-lines < 300;
+        triggered => {
+            root.demo-lines += 1;
+            root.demo-log += "\nlog line " + root.demo-lines + ": a nested scroller that follows the end";
+        }
+    }
+
+    ScrollArea {
+        content-height: col.preferred-height;
+        col := VerticalLayout {
+            padding: 36px;
+            padding-top: 28px;
+            spacing: 8px;
+            alignment: start;
+            Text { text: "Kit gallery"; font-size: Theme.title; font-weight: Theme.semibold; color: Theme.text; }
+            Text { text: "Theme"; font-size: Theme.body; font-weight: Theme.semibold; color: Theme.text; }
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: start;
+                RadioButton { text: "System"; checked: Theme.mode == ThemeMode.system; clicked => { Theme.mode = ThemeMode.system; } }
+                RadioButton { text: "Light"; checked: Theme.mode == ThemeMode.light; clicked => { Theme.mode = ThemeMode.light; } }
+                RadioButton { text: "Dark"; checked: Theme.mode == ThemeMode.dark; clicked => { Theme.mode = ThemeMode.dark; } }
+            }
+            Text { text: "Buttons"; font-size: Theme.body; font-weight: Theme.semibold; color: Theme.text; }
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: start;
+                Button { text: "Button"; }
+                Button { text: "With icon"; icon: "refresh"; }
+                Button { text: "Disabled"; enabled: false; }
+                Button { icon: "more"; }
+                AccentButton { text: "Accent"; }
+                AccentButton { text: "Accent disabled"; enabled: false; }
+                AccentButton { text: "Open dialog"; clicked => { root.dialog-open = true; } }
+            }
+            Text { text: "Nested log (follows the end until scrolled up)"; font-size: Theme.body; font-weight: Theme.semibold; color: Theme.text; }
+            Rectangle {
+                height: 160px;
+                border-radius: Theme.radius-control;
+                background: Theme.window-bg;
+                ScrollArea {
+                    content-height: demolog.preferred-height + 16px;
+                    follow-end: true;
+                    demolog := Text {
+                        x: 8px;
+                        y: 8px;
+                        width: parent.width - 24px;
+                        text: root.demo-log;
+                        font-size: Theme.caption;
+                        font-family: "monospace";
+                        color: Theme.text;
+                        wrap: char-wrap;
+                    }
+                }
+            }
+            SettingsCard {
+                icon: "package";
+                header: "Selection controls";
+                description: "Check boxes, radio buttons and a toggle switch.";
+                CheckBox { text: "Checked"; checked: true; }
+                CheckBox { text: "Unchecked"; }
+                CheckBox { text: "Disabled"; enabled: false; checked: true; }
+                ToggleSwitch { checked: true; }
+            }
+            SettingsCard {
+                icon: "sliders";
+                header: "Radio buttons";
+                description: "One choice of several.";
+                RadioButton { text: "One"; checked: root.radio == 0; clicked => { root.radio = 0; } }
+                RadioButton { text: "Two"; checked: root.radio == 1; clicked => { root.radio = 1; } }
+                RadioButton { text: "Off"; enabled: false; }
+            }
+            SettingsCard {
+                icon: "code";
+                header: "Text and choice";
+                LineEdit { width: 200px; placeholder: "Type here"; }
+                ComboBox { width: 220px; model: ["Current", "MonthlyEnterprise", "SemiAnnual"]; }
+                ComboBox { width: 120px; model: ["Locked"]; enabled: false; }
+            }
+            SettingsCard {
+                icon: "progress";
+                header: "Progress";
+                description: "Determinate (42 %) and indeterminate.";
+                VerticalLayout {
+                    spacing: 12px;
+                    width: 240px;
+                    alignment: center;
+                    ProgressBar { progress: root.demo-progress; }
+                    ProgressBar { indeterminate: true; }
+                    ProgressBar { progress: 0.7; error: true; }
+                }
+            }
+            Expander {
+                icon: "globe";
+                header: "Expander";
+                description: "Click to fold the body open.";
+                expanded: true;
+                CheckBox { text: "Inside the expander"; }
+                Text { text: "Body text in an expander."; font-size: Theme.body; color: Theme.text; }
+            }
+            InfoBar { severity: Severity.info; title: "Informational"; message: "Something you should know."; closable: true; }
+            InfoBar { severity: Severity.success; title: "Success"; message: "Office is installed. Open an app and sign in."; Button { text: "Open Office apps"; } }
+            InfoBar { severity: Severity.caution; title: "Warning"; message: "Required libraries are missing."; }
+            InfoBar { severity: Severity.critical; title: "Error"; message: "Office setup exited with code 17002."; }
+            ListRow {
+                icon: "runtimes";
+                title: "soda-11.0-32-experimental";
+                subtitle: "Prerelease · 2026-10-17";
+                badge: "Active";
+                menu: [
+                    { text: "Set as active", icon: "check", enabled: false, note: "" },
+                    { text: "Remove", icon: "trash", enabled: false, note: "The active runner cannot be removed." },
+                ];
+            }
+            ListRow {
+                icon: "document";
+                title: "Microsoft Word";
+                subtitle: "WINWORD.EXE";
+                action-text: "Launch";
+                menu: [{ text: "Recreate launcher", icon: "refresh", enabled: true, note: "" }];
+            }
+        }
+    }
+
+    if root.dialog-open: ContentDialog {
+        title: "Remove runner?";
+        primary-text: "Remove";
+        primary-clicked => { root.dialog-open = false; }
+        close-clicked => { root.dialog-open = false; }
+        Text {
+            text: "soda-11.0-31-experimental will be deleted from ~/.msoffice/runners.";
+            font-size: Theme.body;
+            color: Theme.text;
+            wrap: word-wrap;
+        }
+    }
+}

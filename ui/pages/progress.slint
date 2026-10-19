@@ -1,0 +1,147 @@
+// Progress & Log page (installer-ui: Progress & Log page).
+import { Theme } from "../theme.slint";
+import { AppState, Page } from "../state.slint";
+import { Button, AccentButton, ProgressBar } from "../kit/controls.slint";
+import { Expander, InfoBar, Severity, ScrollArea } from "../kit/layout.slint";
+import { Icon } from "../kit/icon.slint";
+import { PageHeader } from "install.slint";
+
+component StageLine inherits Rectangle {
+    in property <string> title;
+    in property <int> status;
+    in property <string> detail;
+    min-height: 36px;
+    HorizontalLayout {
+        spacing: 12px;
+        padding-left: 4px;
+        Rectangle {
+            width: 20px;
+            Icon {
+                size: 18px;
+                name: root.status == 2 ? "success" : root.status == 3 ? "error"
+                    : root.status == 4 ? "warning" : root.status == 1 ? "chevron-right" : "info";
+                color: root.status == 2 ? Theme.success : root.status == 3 ? Theme.critical
+                    : root.status == 4 ? Theme.caution : root.status == 1 ? Theme.accent : Theme.text-disabled;
+            }
+        }
+        VerticalLayout {
+            alignment: center;
+            Text {
+                text: root.title;
+                font-size: Theme.body;
+                font-weight: root.status == 1 ? Theme.semibold : 400;
+                color: root.status == 0 ? Theme.text-secondary : Theme.text;
+            }
+            if root.detail != "" && root.status == 1: Text {
+                text: root.detail;
+                font-size: Theme.caption;
+                color: Theme.text-secondary;
+                overflow: elide;
+            }
+        }
+    }
+}
+
+export component ProgressPage inherits Rectangle {
+    ScrollArea {
+        content-height: col.preferred-height;
+        col := VerticalLayout {
+            x: max(0px, (parent.width - self.width) / 2);
+            width: min(1000px, parent.width);
+            padding: 36px;
+            padding-top: 28px;
+            spacing: 8px;
+            alignment: start;
+
+            PageHeader { text: "Progress & Log"; }
+            if !AppState.install-ever-started: Text {
+                text: "No installation has run yet. Start one from the Install page.";
+                font-size: Theme.body;
+                color: Theme.text-secondary;
+                wrap: word-wrap;
+            }
+
+            if AppState.result-kind == 1: InfoBar {
+                severity: Severity.success;
+                title: "Office is installed";
+                message: "Open an Office app and sign in with your Microsoft account. Use Sign in, not Activate.";
+                AccentButton { text: "Open Office apps"; clicked => { AppState.page = Page.apps; } }
+                Button { text: "Open log"; clicked => { AppState.open-path(AppState.result-log); } }
+            }
+            if AppState.result-kind == 2: InfoBar {
+                severity: Severity.critical;
+                title: AppState.result-title;
+                message: AppState.result-message;
+                Button { text: "Open log"; clicked => { AppState.open-path(AppState.result-log); } }
+                Button { text: "Back to Install"; clicked => { AppState.page = Page.install; } }
+            }
+            if AppState.result-kind == 3: InfoBar {
+                severity: Severity.caution;
+                title: "Installation cancelled";
+                message: AppState.result-message;
+                Button { text: "Back to Install"; clicked => { AppState.page = Page.install; } }
+            }
+
+            if AppState.install-ever-started: Rectangle {
+                border-radius: Theme.radius-card;
+                border-width: 1px;
+                border-color: Theme.card-stroke;
+                background: Theme.card-bg;
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 2px;
+                    for s in AppState.stages: StageLine {
+                        title: s.title;
+                        status: s.status;
+                        detail: s.detail;
+                    }
+                    Rectangle { height: 12px; }
+                    if AppState.installing: ProgressBar {
+                        progress: AppState.stage-progress;
+                        indeterminate: AppState.stage-indeterminate;
+                    }
+                    if AppState.installing: Rectangle { height: 8px; }
+                    if AppState.installing: HorizontalLayout {
+                        alignment: space-between;
+                        Text {
+                            text: AppState.stage-indeterminate ? "Working…" : Math.round(AppState.stage-progress * 100) + " %";
+                            font-size: Theme.caption;
+                            color: Theme.text-secondary;
+                            vertical-alignment: center;
+                        }
+                        Button {
+                            text: "Cancel";
+                            icon: "close";
+                            clicked => { AppState.dialog = "cancel-install"; }
+                        }
+                    }
+                }
+            }
+
+            if AppState.install-ever-started: Expander {
+                icon: "document";
+                header: "Log";
+                description: "Live output of the current operation.";
+                Rectangle {
+                    height: 320px;
+                    border-radius: Theme.radius-control;
+                    background: Theme.window-bg;
+                    ScrollArea {
+                        content-height: logtext.preferred-height + 16px;
+                        follow-end: true;
+                        logtext := Text {
+                            x: 8px;
+                            y: 8px;
+                            width: parent.width - 24px;
+                            text: AppState.log-text;
+                            font-size: Theme.caption;
+                            font-family: "monospace";
+                            color: Theme.text;
+                            wrap: char-wrap;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

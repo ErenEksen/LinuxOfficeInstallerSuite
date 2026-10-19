@@ -1,0 +1,205 @@
+// Application shell (installer-ui: Application shell).
+import { Theme, ThemeMode, Metrics } from "theme.slint";
+import { AppState, Page, AppChoice, StageRow, OfficeAppRow, RunnerRow, ReleaseRow } from "state.slint";
+import { NavPane, NavItem, ContentDialog, ScrollArea } from "kit/layout.slint";
+import { CheckBox, LineEdit } from "kit/controls.slint";
+import { InstallPage } from "pages/install.slint";
+import { ProgressPage } from "pages/progress.slint";
+import { AppsPage } from "pages/apps.slint";
+import { RuntimesPage, ReleaseList } from "pages/runtimes.slint";
+import { SettingsPage } from "pages/settings.slint";
+import { GalleryPage } from "pages/gallery.slint";
+import "../assets/fonts/Inter-Regular.ttf";
+import "../assets/fonts/Inter-SemiBold.ttf";
+
+export { Theme, ThemeMode, AppState, Page, AppChoice, StageRow, OfficeAppRow, RunnerRow, ReleaseRow }
+
+component DialogText inherits Text {
+    font-size: Theme.body;
+    color: Theme.text;
+    wrap: word-wrap;
+}
+
+export component AppWindow inherits Window {
+    title: "Linux Office Installer Suite";
+    icon: @image-url("../assets/icons/hicolor/256x256/apps/linux-office-installer-suite.png");
+    preferred-width: 1100px;
+    preferred-height: 760px;
+    min-width: 640px;
+    min-height: 480px;
+    background: Theme.window-bg;
+    default-font-family: Theme.font;
+    property <bool> compact: self.width < 1008px;
+    init => { Metrics.window-height = self.height; }
+    changed height => { Metrics.window-height = self.height; }
+
+    nav := NavPane {
+            x: 0;
+            height: parent.height;
+            compact: root.compact;
+            NavItem {
+                icon: "install"; text: "Install"; compact: root.compact;
+                selected: AppState.page == Page.install;
+                clicked => { AppState.page = Page.install; }
+            }
+            NavItem {
+                icon: "progress"; text: "Progress & Log"; compact: root.compact;
+                selected: AppState.page == Page.progress;
+                clicked => { AppState.page = Page.progress; }
+            }
+            NavItem {
+                icon: "apps"; text: "Office apps"; compact: root.compact;
+                selected: AppState.page == Page.apps;
+                clicked => { AppState.page = Page.apps; AppState.refresh-apps(); }
+            }
+            NavItem {
+                icon: "runtimes"; text: "Wine runtimes"; compact: root.compact;
+                selected: AppState.page == Page.runtimes;
+                clicked => { AppState.page = Page.runtimes; AppState.refresh-runners(); }
+            }
+            Rectangle { }
+            NavItem {
+                icon: "settings"; text: "Settings"; compact: root.compact;
+                selected: AppState.page == Page.settings;
+                clicked => { AppState.page = Page.settings; }
+            }
+        }
+    Rectangle {
+            x: nav.width;
+            width: parent.width - nav.width;
+            height: parent.height;
+            background: Theme.window-bg;
+            if AppState.page == Page.install: InstallPage { }
+            if AppState.page == Page.progress: ProgressPage { }
+            if AppState.page == Page.apps: AppsPage { }
+            if AppState.page == Page.runtimes: RuntimesPage { }
+            if AppState.page == Page.settings: SettingsPage { }
+            if AppState.page == Page.gallery: GalleryPage { }
+    }
+
+    // Window-level dialogs; the smoke layer covers the navigation pane too.
+    if AppState.dialog == "xml": ContentDialog {
+        title: "Configuration.xml";
+        primary-text: "Save as…";
+        close-text: "Close";
+        primary-clicked => { AppState.dialog = "save-xml"; }
+        close-clicked => { AppState.dialog = ""; }
+        Rectangle {
+            height: min(360px, xml.preferred-height + 24px);
+            border-radius: Theme.radius-control;
+            background: Theme.window-bg;
+            ScrollArea {
+                content-height: xml.preferred-height + 24px;
+                xml := Text {
+                    x: 12px;
+                    y: 12px;
+                    width: parent.width - 24px;
+                    text: AppState.xml-preview;
+                    font-family: "monospace";
+                    font-size: Theme.caption;
+                    color: Theme.text;
+                    wrap: char-wrap;
+                }
+            }
+        }
+    }
+    if AppState.dialog == "save-xml": ContentDialog {
+        title: "Save Configuration.xml";
+        primary-text: "Save";
+        default-button: 0;
+        primary-clicked => { AppState.save-xml(); }
+        close-clicked => { AppState.dialog = ""; }
+        DialogText { text: "Saves exactly the configuration shown by Show XML."; }
+        LineEdit { text <=> AppState.save-path; }
+        if AppState.save-result != "": DialogText { text: AppState.save-result; color: Theme.text-secondary; }
+    }
+    if AppState.dialog == "deps" || AppState.dialog == "deps-install": ContentDialog {
+        title: "Install system packages?";
+        primary-text: AppState.dialog == "deps" ? "Install packages" : "Install packages and Office";
+        primary-clicked => {
+            if (AppState.dialog == "deps") { AppState.install-packages(); } else { AppState.confirm-install-with-packages(); }
+            AppState.dialog = "";
+        }
+        close-clicked => { AppState.dialog = ""; }
+        DialogText { text: "These packages are installed with your package manager. You will be asked for your password."; }
+        DialogText { text: AppState.deps-packages; color: Theme.text-secondary; }
+        DialogText { text: "Command:"; }
+        Rectangle {
+            border-radius: Theme.radius-control;
+            background: Theme.window-bg;
+            min-height: cmd.preferred-height + 16px;
+            cmd := Text {
+                x: 8px;
+                width: parent.width - 16px;
+                text: AppState.deps-command;
+                font-family: "monospace";
+                font-size: Theme.caption;
+                color: Theme.text;
+                wrap: char-wrap;
+            }
+        }
+    }
+    if AppState.dialog == "cancel-install": ContentDialog {
+        title: "Cancel the installation?";
+        primary-text: "Cancel installation";
+        close-text: "Keep installing";
+        primary-clicked => { AppState.cancel-install(); AppState.dialog = ""; }
+        close-clicked => { AppState.dialog = ""; }
+        DialogText { text: "Office setup and every Wine process of the prefix are stopped. Finished steps are kept, so the next installation continues from there."; }
+    }
+    if AppState.dialog == "uninstall-office": ContentDialog {
+        title: "Uninstall Office?";
+        primary-text: "Uninstall";
+        primary-clicked => { AppState.uninstall-office(AppState.dialog-check); AppState.dialog = ""; }
+        close-clicked => { AppState.dialog = ""; }
+        DialogText { text: "Removes the Office launchers, their icons and any default-app settings this app made."; }
+        CheckBox { text: "Also delete the Wine prefix (~/.msoffice/prefix)"; checked <=> AppState.dialog-check; }
+    }
+    if AppState.dialog == "stop-office-apps": ContentDialog {
+        title: "Stop all Office apps?";
+        primary-text: "Stop all";
+        primary-clicked => { AppState.stop-office-apps(); AppState.dialog = ""; }
+        close-clicked => { AppState.dialog = ""; }
+        DialogText { text: "Closes every Office app and Office background process in ~/.msoffice/prefix right away. Unsaved changes are lost."; }
+    }
+    if AppState.dialog == "remove-runner": ContentDialog {
+        title: "Remove runner?";
+        primary-text: "Remove";
+        primary-clicked => { AppState.remove-runner(AppState.dialog-arg); AppState.dialog = ""; }
+        close-clicked => { AppState.dialog = ""; }
+        DialogText { text: AppState.dialog-arg + " will be deleted from ~/.msoffice/runners."; }
+    }
+    if AppState.dialog == "reset-prefix": ContentDialog {
+        title: "Reset the Wine prefix?";
+        primary-text: "Reset";
+        primary-clicked => { AppState.reset-prefix(); AppState.dialog = ""; }
+        close-clicked => { AppState.dialog = ""; }
+        DialogText { text: "Deletes ~/.msoffice/prefix, including the installed Office, and the Office launchers. Wine runners and downloads are kept."; }
+    }
+    if AppState.dialog == "remove-app": ContentDialog {
+        title: "Remove Linux Office Installer Suite?";
+        primary-text: "Remove";
+        primary-clicked => { AppState.remove-app(AppState.dialog-check); AppState.dialog = ""; }
+        close-clicked => { AppState.dialog = ""; }
+        DialogText { text: "Removes this app, its menu entry, its icon and its settings. Office keeps working unless you also remove it below."; }
+        CheckBox { text: "Also remove Office (~/.msoffice and the Office launchers)"; checked <=> AppState.dialog-check; }
+    }
+    if AppState.dialog == "remove-everything": ContentDialog {
+        title: "Remove everything?";
+        primary-text: "Remove everything";
+        primary-clicked => { AppState.remove-everything(); AppState.dialog = ""; }
+        close-clicked => { AppState.dialog = ""; }
+        DialogText { text: "Open Office apps are closed first. Then this is deleted:"; }
+        DialogText {
+            text: "• ~/.msoffice: Office, the Wine prefix, Wine runners, downloads and logs\n• The Office launchers, their icons and file associations (your previous defaults come back)\n• This app in ~/.local/bin, its menu entry, icon and settings";
+            color: Theme.text-secondary;
+        }
+        DialogText { text: "Files saved inside the Wine C: drive (for example its Documents folder, when it isn't linked to your home folder) are deleted too. Files elsewhere in your home folder are not touched. The app closes when it's done. This can't be undone."; }
+    }
+    if AppState.dialog == "install-runner": ContentDialog {
+        title: "Install a Wine runtime";
+        close-text: "Close";
+        close-clicked => { AppState.dialog = ""; }
+        ReleaseList { }
+    }
+}

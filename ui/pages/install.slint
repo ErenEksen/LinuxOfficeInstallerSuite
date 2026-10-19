@@ -1,0 +1,285 @@
+// Install page: dependency status and the deployment form (installer-ui: Install page).
+import { Theme } from "../theme.slint";
+import { AppState } from "../state.slint";
+import { Button, AccentButton, CheckBox, RadioButton, ToggleSwitch, LineEdit, ComboBox, ProgressBar } from "../kit/controls.slint";
+import { SettingsCard, Expander, InfoBar, Severity, ScrollArea } from "../kit/layout.slint";
+import { Icon } from "../kit/icon.slint";
+
+component SectionHeader inherits Text {
+    font-size: Theme.body;
+    font-weight: Theme.semibold;
+    color: Theme.text;
+}
+
+export component PageHeader inherits Text {
+    font-size: Theme.title;
+    font-weight: Theme.semibold;
+    color: Theme.text;
+}
+
+export component InstallPage inherits Rectangle {
+    ScrollArea {
+        content-height: col.preferred-height;
+        col := VerticalLayout {
+            x: max(0px, (parent.width - self.width) / 2);
+            width: min(1000px, parent.width);
+            padding: 36px;
+            padding-top: 28px;
+            spacing: 8px;
+            alignment: start;
+
+            PageHeader { text: "Install Microsoft Office"; }
+            Text {
+                text: "Installs Microsoft 365 or Office 2024 into its own Wine prefix. Sign in with your own Microsoft account afterwards.";
+                font-size: Theme.body;
+                color: Theme.text-secondary;
+                wrap: word-wrap;
+            }
+            Rectangle { height: 8px; }
+
+            if AppState.notice != "": InfoBar {
+                severity: Severity.caution;
+                title: "Settings were reset";
+                message: AppState.notice;
+                closable: true;
+                closed => { AppState.dismiss-notice(); }
+            }
+            if AppState.offer-self-install: InfoBar {
+                severity: Severity.info;
+                title: "Install Linux Office Installer Suite for this user";
+                message: AppState.self-install-message != "" ? AppState.self-install-message
+                    : "Copies the app to ~/.local/bin and adds it to your application menu.";
+                closable: true;
+                closed => { AppState.dismiss-self-install(); }
+                AccentButton { text: "Install for this user"; clicked => { AppState.self-install(); } }
+            }
+
+            // Dependencies
+            SectionHeader { text: "System"; }
+            SettingsCard {
+                icon: "package";
+                header: AppState.distro-name == "" ? "System dependencies" : AppState.distro-name;
+                description: !AppState.deps-checked ? "Checking…"
+                    : AppState.support-level + " · " + (AppState.deps-ready ? "All required libraries and tools are installed."
+                    : AppState.deps-missing.length + " required items are missing.");
+                if AppState.deps-busy: ProgressBar { width: 120px; indeterminate: true; }
+                Button {
+                    text: "Check again";
+                    icon: "refresh";
+                    enabled: !AppState.deps-busy && !AppState.installing;
+                    clicked => { AppState.check-deps(); }
+                }
+            }
+            if AppState.deps-checked && AppState.support-untested: InfoBar {
+                severity: Severity.info;
+                title: "Untested distribution family";
+                message: AppState.support-explanation;
+            }
+            if AppState.deps-error != "": InfoBar {
+                severity: Severity.critical;
+                title: "Package installation failed";
+                message: AppState.deps-error;
+            }
+            if AppState.deps-checked && !AppState.deps-ready: InfoBar {
+                severity: Severity.caution;
+                title: "Missing: " + AppState.deps-missing.length + " items";
+                message: AppState.repo-instructions != "" ? AppState.repo-instructions
+                    : AppState.deps-can-auto-install ? "These packages will be installed: " + AppState.deps-packages
+                    : AppState.support-explanation;
+                if AppState.deps-can-auto-install: AccentButton {
+                    text: "Install packages";
+                    enabled: !AppState.deps-busy && !AppState.installing;
+                    clicked => { AppState.dialog = "deps"; }
+                }
+                if !AppState.deps-can-auto-install: Button {
+                    text: "Check again";
+                    enabled: !AppState.deps-busy;
+                    clicked => { AppState.check-deps(); }
+                }
+            }
+            if AppState.deps-checked && !AppState.deps-ready: Rectangle {
+                border-radius: Theme.radius-card;
+                border-width: 1px;
+                border-color: Theme.card-stroke;
+                background: Theme.card-bg;
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 2px;
+                    for m in AppState.deps-missing: Text {
+                        text: m;
+                        font-size: Theme.caption;
+                        color: Theme.text-secondary;
+                    }
+                }
+            }
+
+            // Product & release
+            Rectangle { height: 12px; }
+            SectionHeader { text: "Product & release"; }
+            SettingsCard {
+                icon: "apps";
+                header: "Plan";
+                description: "The Microsoft 365 plan or Office 2024 edition your account holds.";
+                ComboBox {
+                    width: 360px;
+                    model: AppState.plans;
+                    current-index <=> AppState.plan-index;
+                    enabled: !AppState.installing;
+                    selected(i) => { AppState.set-plan(i); }
+                }
+            }
+            InfoBar { severity: Severity.caution; message: AppState.plan-warning; }
+            SettingsCard {
+                icon: "refresh";
+                header: "Update channel";
+                description: AppState.channel-editable ? "Which release cadence to install."
+                    : "Office 2024 always uses the Current channel.";
+                ComboBox {
+                    width: 220px;
+                    model: AppState.channels;
+                    current-index <=> AppState.channel-index;
+                    enabled: AppState.channel-editable && !AppState.installing;
+                    selected(i) => { AppState.set-channel(i); }
+                }
+            }
+            SettingsCard {
+                icon: "sliders";
+                header: "Architecture";
+                description: "64-bit is recommended.";
+                RadioButton {
+                    text: "64-bit";
+                    checked: AppState.edition-index == 0;
+                    enabled: !AppState.installing;
+                    clicked => { AppState.set-edition(0); }
+                }
+                RadioButton {
+                    text: "32-bit";
+                    checked: AppState.edition-index == 1;
+                    enabled: !AppState.installing;
+                    clicked => { AppState.set-edition(1); }
+                }
+            }
+            if AppState.arch-error != "": InfoBar {
+                severity: Severity.critical;
+                title: "Architecture mismatch";
+                message: AppState.arch-error;
+            }
+
+            // Apps
+            Rectangle { height: 12px; }
+            SectionHeader { text: "Apps"; }
+            Rectangle {
+                border-radius: Theme.radius-card;
+                border-width: 1px;
+                border-color: Theme.card-stroke;
+                background: Theme.card-bg;
+                VerticalLayout {
+                    padding: 16px;
+                    padding-left: 56px;
+                    spacing: 4px;
+                    for app[i] in AppState.apps: HorizontalLayout {
+                        spacing: 12px;
+                        CheckBox {
+                            text: app.label;
+                            checked: app.checked;
+                            enabled: !AppState.installing;
+                            width: 200px;
+                            toggled(v) => { AppState.set-app(i, v); }
+                        }
+                        if app.note != "": Text {
+                            text: app.note;
+                            font-size: Theme.caption;
+                            color: Theme.caution;
+                            vertical-alignment: center;
+                            wrap: word-wrap;
+                        }
+                    }
+                }
+            }
+
+            // Language
+            Rectangle { height: 12px; }
+            SectionHeader { text: "Language"; }
+            SettingsCard {
+                icon: "globe";
+                header: "Match my system language";
+                description: "Uses your system language, with English (en-us) as a fallback and always installed.";
+                ToggleSwitch {
+                    checked <=> AppState.match-os;
+                    enabled: !AppState.installing;
+                    toggled => { AppState.form-changed(); }
+                }
+            }
+            if !AppState.match-os: SettingsCard {
+                header: "Languages";
+                description: "Language tags separated by commas, for example de-de, en-us.";
+                LineEdit {
+                    width: 260px;
+                    text <=> AppState.languages;
+                    placeholder: "en-us";
+                    enabled: !AppState.installing;
+                    edited => { AppState.form-changed(); }
+                }
+            }
+
+            // Advanced
+            Rectangle { height: 12px; }
+            Expander {
+                icon: "code";
+                header: "Advanced";
+                description: "Updates, setup display and logging.";
+                HorizontalLayout {
+                    Text { text: "Office updates"; font-size: Theme.body; color: Theme.text; vertical-alignment: center; }
+                    ToggleSwitch {
+                        checked <=> AppState.updates-enabled;
+                        enabled: !AppState.installing;
+                        toggled => { AppState.form-changed(); }
+                    }
+                }
+                Text {
+                    text: "Off by default: updates can replace a build that works under Wine.";
+                    font-size: Theme.caption;
+                    color: Theme.text-secondary;
+                    wrap: word-wrap;
+                }
+                HorizontalLayout {
+                    Text { text: "Show the Office setup window"; font-size: Theme.body; color: Theme.text; vertical-alignment: center; }
+                    ToggleSwitch {
+                        checked <=> AppState.display-full;
+                        enabled: !AppState.installing;
+                        toggled => { AppState.form-changed(); }
+                    }
+                }
+                HorizontalLayout {
+                    Text { text: "Setup logging"; font-size: Theme.body; color: Theme.text; vertical-alignment: center; }
+                    ToggleSwitch {
+                        checked <=> AppState.logging;
+                        enabled: !AppState.installing;
+                        toggled => { AppState.form-changed(); }
+                    }
+                }
+            }
+
+            // Footer
+            Rectangle { height: 16px; }
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: end;
+                Button { text: "Show XML"; icon: "code"; clicked => { AppState.dialog = "xml"; } }
+                Button { text: "Save as…"; icon: "save"; clicked => { AppState.dialog = "save-xml"; } }
+                AccentButton {
+                    text: AppState.installing ? "Installing…" : "Install";
+                    icon: "install";
+                    enabled: !AppState.installing && AppState.arch-error == "" && AppState.deps-checked;
+                    clicked => {
+                        if (!AppState.deps-ready && AppState.deps-can-auto-install) {
+                            AppState.dialog = "deps-install";
+                        } else {
+                            AppState.start-install();
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,159 @@
+// State and callbacks shared between the pages and Rust (src/ui/bridge.rs).
+import { MenuItem } from "kit/layout.slint";
+
+export struct AppChoice {
+    label: string,
+    note: string,
+    checked: bool,
+}
+
+export struct StageRow {
+    title: string,
+    // 0 pending, 1 running, 2 done, 3 failed, 4 cancelled
+    status: int,
+    detail: string,
+}
+
+export struct OfficeAppRow {
+    id: string,
+    name: string,
+    exe: string,
+    icon: image,
+}
+
+export struct RunnerRow {
+    tag: string,
+    subtitle: string,
+    active: bool,
+    /// Soda 11.0-32 or later; older runners cannot run Office.
+    supported: bool,
+}
+
+export struct ReleaseRow {
+    tag: string,
+    subtitle: string,
+    installed: bool,
+    installable: bool,
+}
+
+export enum Page { install, progress, apps, runtimes, settings, gallery }
+
+export global AppState {
+    in-out property <Page> page: Page.install;
+    // Modal dialog shown over the window ("" = none) and its argument.
+    in-out property <string> dialog;
+    in-out property <string> dialog-arg;
+    in-out property <bool> dialog-check;
+    in property <string> version;
+    in property <string> notice;
+    callback dismiss-notice();
+
+    // Self-install offer (app-settings: Self-install).
+    in property <bool> offer-self-install;
+    in property <string> self-install-message;
+    callback self-install();
+    callback dismiss-self-install();
+
+    // Dependencies card
+    in property <bool> deps-checked;
+    in property <bool> deps-ready;
+    in property <bool> deps-busy;
+    in property <string> distro-name;
+    in property <string> support-level;
+    in property <string> support-explanation;
+    in property <bool> support-untested;
+    in property <[string]> deps-missing;
+    in property <string> deps-packages;
+    in property <string> deps-command;
+    in property <string> repo-instructions;
+    in property <bool> deps-can-auto-install;
+    in property <string> deps-error;
+    callback check-deps();
+    callback install-packages();
+
+    // Deployment form
+    in property <[string]> plans;
+    in-out property <int> plan-index;
+    in property <string> plan-warning;
+    in property <[string]> channels;
+    in-out property <int> channel-index;
+    in property <bool> channel-editable;
+    in-out property <int> edition-index;
+    in property <[AppChoice]> apps;
+    in-out property <bool> match-os;
+    in-out property <string> languages;
+    in-out property <bool> updates-enabled;
+    in-out property <bool> display-full;
+    in-out property <bool> logging;
+    in property <string> arch-error;
+    in property <string> xml-preview;
+    in-out property <string> save-path;
+    in property <string> save-result;
+    callback set-plan(int);
+    callback set-channel(int);
+    callback set-edition(int);
+    callback set-app(int, bool);
+    callback form-changed();
+    callback save-xml();
+
+    // Install pipeline
+    in property <bool> installing;
+    in property <bool> install-ever-started;
+    in property <[StageRow]> stages;
+    in property <float> stage-progress;
+    in property <bool> stage-indeterminate;
+    in property <string> stage-detail;
+    in property <string> log-text;
+    in property <int> result-kind; // 0 none, 1 success, 2 error, 3 cancelled
+    in property <string> result-title;
+    in property <string> result-message;
+    in property <string> result-log;
+    callback start-install();
+    callback confirm-install-with-packages();
+    callback cancel-install();
+    callback open-path(string);
+
+    // Office apps
+    in property <[OfficeAppRow]> office-apps;
+    in property <bool> office-installed;
+    in property <string> apps-message;
+    callback refresh-apps();
+    callback launch-app(string);
+    callback stop-office-apps();
+    callback recreate-launcher(string);
+    /// Office is installed, but parts added by later versions of this app are missing.
+    in property <bool> office-needs-repair;
+    callback repair-office();
+    callback uninstall-office(bool);
+
+    // Wine runtimes
+    in property <[RunnerRow]> runners;
+    in property <[ReleaseRow]> releases;
+    in property <bool> releases-loading;
+    in property <string> releases-error;
+    in property <bool> runner-busy;
+    in property <float> runner-progress;
+    in property <string> runner-status;
+    in property <string> runner-error;
+    callback refresh-runners();
+    callback load-releases();
+    callback install-release(string);
+    callback set-active-runner(string);
+    callback remove-runner(string);
+
+    // Settings
+    in-out property <int> theme-index;
+    in-out property <bool> default-handlers;
+    in property <[string]> office-scales;
+    in-out property <int> office-scale-index;
+    in property <string> settings-message;
+    in property <string> logs-dir;
+    callback set-theme(int);
+    callback set-default-handlers(bool);
+    callback set-office-scale(int);
+    callback reset-prefix();
+    callback open-logs();
+    callback remove-app(bool);
+    callback remove-everything();
+    in property <bool> removing;
+}

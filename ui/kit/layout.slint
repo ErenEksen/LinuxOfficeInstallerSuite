@@ -1,0 +1,562 @@
+// Windows 11 style layout pieces: navigation pane, settings cards, expander, info bar,
+// content dialog, list rows with an overflow menu, and a flat scroll area.
+import { Theme } from "../theme.slint";
+import { Icon } from "icon.slint";
+import { Button, AccentButton } from "controls.slint";
+
+export component NavItem inherits Rectangle {
+    in property <string> icon;
+    in property <string> text;
+    in property <bool> selected;
+    in property <bool> compact;
+    callback clicked();
+
+    height: 36px;
+    border-radius: Theme.radius-control;
+    background: ta.pressed ? Theme.subtle-pressed : (selected || ta.has-hover) ? Theme.subtle-hover : transparent;
+    accessible-role: tab;
+    accessible-label: text;
+    accessible-item-selected: selected;
+    accessible-action-default => { clicked(); }
+
+    // Accent indicator of the selected entry.
+    Rectangle {
+        x: 0;
+        y: (parent.height - self.height) / 2;
+        width: 3px;
+        height: root.selected ? 16px : 0px;
+        border-radius: 1.5px;
+        background: Theme.accent;
+        animate height { duration: 120ms; }
+    }
+    Icon {
+        x: 14px;
+        y: (parent.height - self.height) / 2;
+        name: root.icon;
+        color: Theme.text;
+    }
+    if !root.compact: Text {
+        x: 44px;
+        width: parent.width - 52px;
+        height: parent.height;
+        text: root.text;
+        font-size: Theme.body;
+        color: Theme.text;
+        vertical-alignment: center;
+        overflow: elide;
+    }
+    ta := TouchArea {
+        mouse-cursor: MouseCursor.pointer;
+        clicked => { root.clicked(); }
+        // In compact mode the label is shown as a tooltip.
+        if root.compact: Tooltip {
+            Rectangle {
+                background: Theme.popup-bg;
+                border-radius: 4px;
+                border-width: 1px;
+                border-color: Theme.popup-stroke;
+                HorizontalLayout {
+                    padding-left: 9px;
+                    padding-right: 9px;
+                    padding-top: 6px;
+                    padding-bottom: 6px;
+                    Text { text: root.text; font-size: Theme.caption; color: Theme.text; }
+                }
+            }
+        }
+    }
+}
+
+// Left navigation pane: 320 px open, 48 px compact.
+export component NavPane inherits Rectangle {
+    in property <bool> compact;
+    width: compact ? 48px : 320px;
+    background: Theme.pane-bg;
+    animate width { duration: 150ms; easing: ease-out; }
+    VerticalLayout {
+        padding-left: 4px;
+        padding-right: 4px;
+        padding-top: 4px;
+        padding-bottom: 8px;
+        spacing: 4px;
+        @children
+    }
+}
+
+export component SettingsCard inherits Rectangle {
+    in property <string> icon;
+    in property <string> header;
+    in property <string> description;
+    in property <bool> clickable;
+    in property <bool> enabled: true;
+    callback clicked();
+
+    min-height: 68px;
+    border-radius: Theme.radius-card;
+    border-width: 1px;
+    border-color: Theme.card-stroke;
+    background: clickable && ta.has-hover ? Theme.card-bg-hover : Theme.card-bg;
+
+    ta := TouchArea {
+        enabled: root.clickable && root.enabled;
+        mouse-cursor: root.clickable ? MouseCursor.pointer : MouseCursor.default;
+        clicked => { root.clicked(); }
+    }
+    HorizontalLayout {
+        padding: 16px;
+        spacing: 20px;
+        if root.icon != "": Icon {
+            name: root.icon;
+            size: 20px;
+            y: (parent.height - self.height) / 2;
+            color: root.enabled ? Theme.text : Theme.text-disabled;
+        }
+        VerticalLayout {
+            alignment: center;
+            spacing: 2px;
+            horizontal-stretch: 1;
+            Text {
+                text: root.header;
+                font-size: Theme.body;
+                color: root.enabled ? Theme.text : Theme.text-disabled;
+                wrap: word-wrap;
+            }
+            if root.description != "": Text {
+                text: root.description;
+                font-size: Theme.caption;
+                color: root.enabled ? Theme.text-secondary : Theme.text-disabled;
+                wrap: word-wrap;
+            }
+        }
+        HorizontalLayout {
+            alignment: end;
+            spacing: 8px;
+            horizontal-stretch: 0;
+            @children
+        }
+    }
+}
+
+// A card whose body folds open below the header.
+export component Expander inherits Rectangle {
+    in property <string> icon;
+    in property <string> header;
+    in property <string> description;
+    in-out property <bool> expanded;
+
+    border-radius: Theme.radius-card;
+    border-width: 1px;
+    border-color: Theme.card-stroke;
+    background: Theme.card-bg;
+    clip: true;
+
+    VerticalLayout {
+        Rectangle {
+            min-height: 68px;
+            background: hta.has-hover ? Theme.card-bg-hover : transparent;
+            hta := TouchArea {
+                mouse-cursor: MouseCursor.pointer;
+                clicked => { root.expanded = !root.expanded; }
+            }
+            HorizontalLayout {
+                padding: 16px;
+                spacing: 20px;
+                if root.icon != "": Icon {
+                    name: root.icon;
+                    size: 20px;
+                    y: (parent.height - self.height) / 2;
+                }
+                VerticalLayout {
+                    alignment: center;
+                    spacing: 2px;
+                    horizontal-stretch: 1;
+                    Text { text: root.header; font-size: Theme.body; color: Theme.text; }
+                    if root.description != "": Text {
+                        text: root.description;
+                        font-size: Theme.caption;
+                        color: Theme.text-secondary;
+                        wrap: word-wrap;
+                    }
+                }
+                Rectangle {
+                    width: 32px;
+                    horizontal-stretch: 0;
+                    Icon {
+                        name: root.expanded ? "chevron-up" : "chevron-down";
+                        size: 14px;
+                        color: Theme.text-secondary;
+                    }
+                }
+            }
+        }
+        Rectangle {
+            height: root.expanded ? 1px : 0px;
+            background: Theme.card-stroke;
+        }
+        Rectangle {
+            visible: root.expanded;
+            height: root.expanded ? body.preferred-height : 0px;
+            body := VerticalLayout {
+                padding: 16px;
+                padding-left: root.icon != "" ? 56px : 16px;
+                spacing: 8px;
+                @children
+            }
+        }
+    }
+}
+
+export enum Severity { info, success, caution, critical }
+
+export component InfoBar inherits Rectangle {
+    in property <Severity> severity: Severity.info;
+    in property <string> title;
+    in property <string> message;
+    in property <bool> closable;
+    callback closed();
+
+    border-radius: Theme.radius-card;
+    border-width: 1px;
+    border-color: Theme.card-stroke;
+    background: severity == Severity.success ? Theme.success-bg
+        : severity == Severity.caution ? Theme.caution-bg
+        : severity == Severity.critical ? Theme.critical-bg : Theme.info-bg;
+    accessible-role: text;
+    accessible-label: title + " " + message;
+
+    HorizontalLayout {
+        padding: 14px;
+        padding-left: 16px;
+        spacing: 12px;
+        Icon {
+            y: 2px;
+            size: 18px;
+            name: root.severity == Severity.success ? "success"
+                : root.severity == Severity.caution ? "warning"
+                : root.severity == Severity.critical ? "error" : "info";
+            color: root.severity == Severity.success ? Theme.success
+                : root.severity == Severity.caution ? Theme.caution
+                : root.severity == Severity.critical ? Theme.critical : Theme.accent;
+        }
+        VerticalLayout {
+            spacing: 8px;
+            horizontal-stretch: 1;
+            if root.title != "": Text {
+                text: root.title;
+                font-size: Theme.body;
+                font-weight: Theme.semibold;
+                color: Theme.text;
+                wrap: word-wrap;
+            }
+            if root.message != "": Text {
+                text: root.message;
+                font-size: Theme.body;
+                color: Theme.text;
+                wrap: word-wrap;
+            }
+            HorizontalLayout {
+                alignment: start;
+                spacing: 8px;
+                @children
+            }
+        }
+        if root.closable: Button {
+            icon: "close";
+            width: 32px;
+            clicked => { root.closed(); }
+        }
+    }
+}
+
+// Modal dialog over a smoke layer. The default button is "close" (Cancel) unless set
+// otherwise, so a destructive action is never the default.
+export component ContentDialog inherits Rectangle {
+    in property <string> title;
+    in property <string> primary-text;
+    in property <string> secondary-text;
+    in property <string> close-text: "Cancel";
+    in property <bool> primary-enabled: true;
+    in property <int> default-button: 2;
+    callback primary-clicked();
+    callback secondary-clicked();
+    callback close-clicked();
+
+    background: Theme.smoke;
+    // Swallow clicks on the smoke layer.
+    TouchArea { }
+    fs := FocusScope {
+        key-pressed(e) => {
+            if (e.text == Key.Escape) { root.close-clicked(); return accept; }
+            if (e.text == "\n") {
+                if (root.default-button == 0 && root.primary-enabled) { root.primary-clicked(); }
+                else if (root.default-button == 1) { root.secondary-clicked(); }
+                else { root.close-clicked(); }
+                return accept;
+            }
+            reject
+        }
+    }
+    init => { fs.focus(); }
+
+    dialog := Rectangle {
+        width: min(548px, root.width - 48px);
+        height: min(self.preferred-height, root.height - 48px);
+        border-radius: Theme.radius-dialog;
+        border-width: 1px;
+        border-color: Theme.popup-stroke;
+        background: Theme.dialog-bg;
+        clip: true;
+        VerticalLayout {
+            VerticalLayout {
+                padding: 24px;
+                spacing: 12px;
+                Text {
+                    text: root.title;
+                    font-size: Theme.subtitle;
+                    font-weight: Theme.semibold;
+                    color: Theme.text;
+                    wrap: word-wrap;
+                }
+                @children
+            }
+            Rectangle {
+                background: Theme.dialog-footer;
+                HorizontalLayout {
+                    padding: 24px;
+                    spacing: 8px;
+                    alignment: stretch;
+                    if root.primary-text != "" && root.default-button == 0: AccentButton {
+                        text: root.primary-text;
+                        enabled: root.primary-enabled;
+                        horizontal-stretch: 1;
+                        clicked => { root.primary-clicked(); }
+                    }
+                    if root.primary-text != "" && root.default-button != 0: Button {
+                        text: root.primary-text;
+                        enabled: root.primary-enabled;
+                        horizontal-stretch: 1;
+                        clicked => { root.primary-clicked(); }
+                    }
+                    if root.secondary-text != "": Button {
+                        text: root.secondary-text;
+                        horizontal-stretch: 1;
+                        clicked => { root.secondary-clicked(); }
+                    }
+                    if root.close-text != "" && root.default-button == 2: AccentButton {
+                        text: root.close-text;
+                        horizontal-stretch: 1;
+                        clicked => { root.close-clicked(); }
+                    }
+                    if root.close-text != "" && root.default-button != 2: Button {
+                        text: root.close-text;
+                        horizontal-stretch: 1;
+                        clicked => { root.close-clicked(); }
+                    }
+                }
+            }
+        }
+    }
+}
+
+export struct MenuItem {
+    text: string,
+    icon: string,
+    enabled: bool,
+    // Shown under a disabled item, e.g. why it is disabled.
+    note: string,
+}
+
+// One row in a list card: icon, title, subtitle, optional badge, an optional quick action
+// button and an overflow ("…") menu.
+export component ListRow inherits Rectangle {
+    in property <string> icon;
+    in property <image> image;
+    in property <string> title;
+    in property <string> subtitle;
+    in property <string> badge;
+    in property <string> action-text;
+    in property <[MenuItem]> menu;
+    callback action();
+    callback menu-selected(int);
+
+    min-height: 60px;
+    border-radius: Theme.radius-card;
+    border-width: 1px;
+    border-color: Theme.card-stroke;
+    background: Theme.card-bg;
+
+    HorizontalLayout {
+        padding-left: 16px;
+        padding-right: 12px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        spacing: 16px;
+        if root.image.width > 0: Image {
+            source: root.image;
+            width: 32px;
+            height: 32px;
+            y: (parent.height - self.height) / 2;
+        }
+        if root.image.width == 0 && root.icon != "": Icon {
+            name: root.icon;
+            size: 20px;
+            y: (parent.height - self.height) / 2;
+        }
+        VerticalLayout {
+            alignment: center;
+            spacing: 2px;
+            horizontal-stretch: 1;
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: start;
+                Text { text: root.title; font-size: Theme.body; color: Theme.text; vertical-alignment: center; }
+                if root.badge != "": Rectangle {
+                    border-radius: 4px;
+                    background: Theme.accent;
+                    HorizontalLayout {
+                        padding-left: 6px;
+                        padding-right: 6px;
+                        padding-top: 1px;
+                        padding-bottom: 1px;
+                        Text { text: root.badge; font-size: Theme.caption; color: Theme.text-on-accent; }
+                    }
+                }
+            }
+            if root.subtitle != "": Text {
+                text: root.subtitle;
+                font-size: Theme.caption;
+                color: Theme.text-secondary;
+                wrap: word-wrap;
+            }
+        }
+        if root.action-text != "": Button {
+            text: root.action-text;
+            y: (parent.height - self.height) / 2;
+            clicked => { root.action(); }
+        }
+        if root.menu.length > 0: more := Button {
+            icon: "more";
+            width: 32px;
+            y: (parent.height - self.height) / 2;
+            accessible-label: "More options";
+            clicked => { popup.show(); }
+        }
+    }
+
+    popup := PopupWindow {
+        x: root.width - 232px;
+        y: root.height - 6px;
+        width: 220px;
+        Rectangle {
+            background: Theme.popup-bg;
+            border-radius: 8px;
+            border-width: 1px;
+            border-color: Theme.popup-stroke;
+            VerticalLayout {
+                padding: 4px;
+                for item[i] in root.menu: Rectangle {
+                    min-height: 36px;
+                    border-radius: 4px;
+                    background: item.enabled && mta.has-hover ? Theme.subtle-hover : transparent;
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        padding-right: 12px;
+                        padding-top: 8px;
+                        padding-bottom: 8px;
+                        spacing: 12px;
+                        if item.icon != "": Icon {
+                            name: item.icon;
+                            y: 1px;
+                            color: item.enabled ? Theme.text : Theme.text-disabled;
+                        }
+                        VerticalLayout {
+                            spacing: 2px;
+                            Text {
+                                text: item.text;
+                                font-size: Theme.body;
+                                color: item.enabled ? Theme.text : Theme.text-disabled;
+                            }
+                            if item.note != "": Text {
+                                text: item.note;
+                                font-size: Theme.caption;
+                                color: Theme.text-disabled;
+                                wrap: word-wrap;
+                            }
+                        }
+                    }
+                    mta := TouchArea {
+                        enabled: item.enabled;
+                        clicked => { root.menu-selected(i); }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Flickable with a thin flat scrollbar. Mouse drags don't pan the content (only wheel,
+// touch and the scrollbar do), so dragging an inner scrollbar never moves the page.
+export component ScrollArea inherits Rectangle {
+    in property <length> content-height;
+    // Stay at the end while the view is there (a growing log); scrolling up stops following.
+    in property <bool> follow-end;
+    property <length> max-scroll: max(0px, root.content-height - root.height);
+    property <length> last-max;
+    clip: true;
+
+    function scroll-to(y: length) {
+        flick.content-y = max(-root.max-scroll, min(0px, y));
+    }
+    function keep-end() {
+        if (root.follow-end && flick.content-y <= -root.last-max + 2px) {
+            flick.content-y = -root.max-scroll;
+        }
+        root.last-max = root.max-scroll;
+    }
+    init => {
+        if (root.follow-end) { flick.content-y = -root.max-scroll; }
+        root.last-max = root.max-scroll;
+    }
+    changed content-height => { root.keep-end(); }
+    changed height => { root.keep-end(); }
+
+    flick := Flickable {
+        width: parent.width;
+        height: parent.height;
+        content-width: parent.width;
+        content-height: max(root.content-height, parent.height);
+        mouse-drag-pan-enabled: false;
+        @children
+    }
+    if root.max-scroll > 0: Rectangle {
+        // A 12px wide hit strip with a thin thumb; clicking the strip jumps there.
+        property <length> thumb-h: max(24px, root.height * root.height / root.content-height);
+        property <length> travel: root.height - self.thumb-h;
+        property <length> thumb-y: -flick.content-y / root.max-scroll * self.travel;
+        x: parent.width - 12px;
+        width: 12px;
+        Rectangle {
+            x: parent.width - self.width - 3px;
+            y: parent.thumb-y;
+            width: sta.has-hover || sta.pressed ? 6px : 3px;
+            height: parent.thumb-h;
+            border-radius: self.width / 2;
+            background: Theme.control-stroke-strong;
+            animate width { duration: 100ms; }
+        }
+        sta := TouchArea {
+            property <length> start-y;
+            pointer-event(e) => {
+                if (e.kind == PointerEventKind.down) {
+                    if (self.mouse-y < parent.thumb-y || self.mouse-y > parent.thumb-y + parent.thumb-h) {
+                        root.scroll-to(-(self.mouse-y - parent.thumb-h / 2) / parent.travel * root.max-scroll);
+                    }
+                    self.start-y = flick.content-y;
+                }
+            }
+            moved => {
+                root.scroll-to(self.start-y - (self.mouse-y - self.pressed-y) / parent.travel * root.max-scroll);
+            }
+        }
+    }
+}

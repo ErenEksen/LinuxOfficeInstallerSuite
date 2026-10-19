@@ -1,0 +1,118 @@
+// Settings page.
+import { Theme } from "../theme.slint";
+import { AppState } from "../state.slint";
+import { Button, RadioButton, ToggleSwitch, ComboBox } from "../kit/controls.slint";
+import { SettingsCard, Expander, InfoBar, Severity, ScrollArea } from "../kit/layout.slint";
+import { PageHeader } from "install.slint";
+
+export component SettingsPage inherits Rectangle {
+    ScrollArea {
+        content-height: col.preferred-height;
+        col := VerticalLayout {
+            x: max(0px, (parent.width - self.width) / 2);
+            width: min(1000px, parent.width);
+            padding: 36px;
+            padding-top: 28px;
+            spacing: 8px;
+            alignment: start;
+
+            PageHeader { text: "Settings"; }
+            if AppState.settings-message != "": InfoBar { severity: Severity.info; message: AppState.settings-message; }
+
+            Text { text: "Appearance"; font-size: Theme.body; font-weight: Theme.semibold; color: Theme.text; }
+            SettingsCard {
+                icon: "palette";
+                header: "App theme";
+                description: "Follow the system, or always use light or dark.";
+                RadioButton { text: "System"; checked: AppState.theme-index == 0; clicked => { AppState.set-theme(0); } }
+                RadioButton { text: "Light"; checked: AppState.theme-index == 1; clicked => { AppState.set-theme(1); } }
+                RadioButton { text: "Dark"; checked: AppState.theme-index == 2; clicked => { AppState.set-theme(2); } }
+            }
+
+            Rectangle { height: 12px; }
+            Text { text: "Office"; font-size: Theme.body; font-weight: Theme.semibold; color: Theme.text; }
+            SettingsCard {
+                icon: "link";
+                header: "Set as default for Office files";
+                description: "Opens Word, Excel and PowerPoint documents with Office. Your previous defaults are restored when Office is uninstalled.";
+                ToggleSwitch {
+                    checked: AppState.default-handlers;
+                    toggled(v) => { AppState.set-default-handlers(v); }
+                }
+            }
+            SettingsCard {
+                icon: "palette";
+                header: "Display scaling";
+                description: "How large Office draws its menus and text. Raise it on high-resolution screens for sharp, larger text. Applies the next time Office starts.";
+                ComboBox {
+                    width: 200px;
+                    model: AppState.office-scales;
+                    current-index <=> AppState.office-scale-index;
+                    selected(i) => { AppState.set-office-scale(i); }
+                }
+            }
+            SettingsCard {
+                icon: "refresh";
+                header: "Reset prefix";
+                description: "Deletes the Wine prefix and the Office launchers. Wine runners and downloads are kept.";
+                Button {
+                    text: "Reset prefix";
+                    enabled: !AppState.installing;
+                    clicked => { AppState.dialog = "reset-prefix"; }
+                }
+            }
+            SettingsCard {
+                icon: "folder";
+                header: "Logs";
+                description: AppState.logs-dir;
+                Button { text: "Open logs folder"; icon: "launch"; clicked => { AppState.open-logs(); } }
+            }
+
+            Rectangle { height: 12px; }
+            Text { text: "App"; font-size: Theme.body; font-weight: Theme.semibold; color: Theme.text; }
+            SettingsCard {
+                icon: "trash";
+                header: "Remove Linux Office Installer Suite";
+                description: "Removes this app, its menu entry and its settings. You choose separately whether Office stays installed.";
+                Button {
+                    text: "Remove…";
+                    enabled: !AppState.installing && !AppState.removing;
+                    clicked => { AppState.dialog-check = false; AppState.dialog = "remove-app"; }
+                }
+            }
+            SettingsCard {
+                icon: "trash";
+                header: "Remove everything";
+                description: "Deletes Office, the Wine prefix, Wine runners, downloads, logs, the Office launchers and file associations, this app and its settings. Nothing the app created is left behind.";
+                Button {
+                    text: AppState.removing ? "Removing…" : "Remove everything…";
+                    enabled: !AppState.installing && !AppState.removing;
+                    clicked => { AppState.dialog = "remove-everything"; }
+                }
+            }
+            Expander {
+                icon: "info";
+                header: "About";
+                description: "Linux Office Installer Suite " + AppState.version;
+                Text {
+                    text: "A one-click installer for Microsoft 365 and Office 2024 on Linux, for people who already own an Office license.";
+                    font-size: Theme.body;
+                    color: Theme.text;
+                    wrap: word-wrap;
+                }
+                Text {
+                    text: "No Microsoft binaries are shipped: the Office Deployment Tool, redistributables and fonts are downloaded at install time from Microsoft or public archives and checked against pinned checksums. The app never ships, generates or asks for product keys and contains no activation workarounds. Sign in with your own Microsoft account.";
+                    font-size: Theme.caption;
+                    color: Theme.text-secondary;
+                    wrap: word-wrap;
+                }
+                Text {
+                    text: "Microsoft, Microsoft 365, Office, Word, Excel, PowerPoint, Outlook, OneNote, Access and Publisher are trademarks of Microsoft Corporation. This project is not affiliated with or endorsed by Microsoft. Wine runners: Bottles Soda. UI: Slint. Font: Inter (SIL Open Font License).";
+                    font-size: Theme.caption;
+                    color: Theme.text-secondary;
+                    wrap: word-wrap;
+                }
+            }
+        }
+    }
+}

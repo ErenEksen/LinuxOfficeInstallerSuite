@@ -1,0 +1,14 @@
+<Configuration>
+  <Add OfficeClientEdition="64" Channel="SemiAnnual">
+    <Product ID="O365HomePremRetail">
+      <Language ID="MatchOS" Fallback="en-us" />
+      <Language ID="en-us" />
+      <ExcludeApp ID="Groove" />
+      <ExcludeApp ID="Lync" />
+      <ExcludeApp ID="Teams" />
+    </Product>
+  </Add>
+  <Display Level="None" AcceptEULA="TRUE" />
+  <Updates Enabled="FALSE" />
+  <Logging Level="Standard" Path="C:\msoffice-logs" />
+</Configuration>

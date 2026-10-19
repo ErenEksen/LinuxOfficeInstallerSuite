@@ -1,0 +1,504 @@
+// Flat Windows 11 style controls built on Slint primitives: solid fills and 1 px solid
+// strokes only (installer-ui: No gradients).
+import { Theme, Metrics } from "../theme.slint";
+import { Icon } from "icon.slint";
+
+component FocusRing inherits Rectangle {
+    in property <bool> show;
+    in property <length> radius: Theme.radius-control;
+    in property <length> w;
+    in property <length> h;
+    x: -3px;
+    y: -3px;
+    width: w + 6px;
+    height: h + 6px;
+    border-radius: radius + 3px;
+    border-width: show ? 2px : 0px;
+    border-color: Theme.focus-ring;
+}
+
+export component Button inherits Rectangle {
+    in property <string> text;
+    in property <string> icon;
+    in property <bool> enabled: true;
+    callback clicked();
+
+    min-width: 32px;
+    height: 32px;
+    border-radius: Theme.radius-control;
+    border-width: 1px;
+    border-color: Theme.control-stroke;
+    background: !enabled ? Theme.control-bg-disabled
+        : ta.pressed ? Theme.control-bg-pressed
+        : ta.has-hover ? Theme.control-bg-hover : Theme.control-bg;
+    animate background { duration: 83ms; }
+    accessible-role: button;
+    accessible-label: text;
+    accessible-action-default => { if (enabled) { clicked(); } }
+    forward-focus: fs;
+
+    HorizontalLayout {
+        padding-left: text == "" ? 8px : 12px;
+        padding-right: text == "" ? 8px : 12px;
+        spacing: 8px;
+        alignment: center;
+        if root.icon != "": Icon {
+            name: root.icon;
+            y: (parent.height - self.height) / 2;
+            color: root.enabled ? Theme.text : Theme.text-disabled;
+        }
+        if root.text != "": Text {
+            text: root.text;
+            font-size: Theme.body;
+            color: root.enabled ? Theme.text : Theme.text-disabled;
+            vertical-alignment: center;
+        }
+    }
+    fs := FocusScope {
+        enabled: root.enabled;
+        key-pressed(e) => {
+            if (e.text == " " || e.text == "\n") { root.clicked(); return accept; }
+            reject
+        }
+    }
+    ta := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: MouseCursor.pointer;
+        clicked => { fs.focus(); root.clicked(); }
+    }
+    FocusRing { w: root.width; h: root.height; show: fs.has-focus && fs.enabled; }
+}
+
+export component AccentButton inherits Rectangle {
+    in property <string> text;
+    in property <string> icon;
+    in property <bool> enabled: true;
+    callback clicked();
+
+    min-width: 32px;
+    height: 32px;
+    border-radius: Theme.radius-control;
+    background: !enabled ? Theme.accent-disabled
+        : ta.pressed ? Theme.accent-pressed
+        : ta.has-hover ? Theme.accent-hover : Theme.accent;
+    animate background { duration: 83ms; }
+    accessible-role: button;
+    accessible-label: text;
+    accessible-action-default => { if (enabled) { clicked(); } }
+    forward-focus: fs;
+
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        spacing: 8px;
+        alignment: center;
+        if root.icon != "": Icon {
+            name: root.icon;
+            y: (parent.height - self.height) / 2;
+            color: root.enabled ? Theme.text-on-accent : Theme.text-disabled;
+        }
+        Text {
+            text: root.text;
+            font-size: Theme.body;
+            color: root.enabled ? Theme.text-on-accent : Theme.text-disabled;
+            vertical-alignment: center;
+        }
+    }
+    fs := FocusScope {
+        enabled: root.enabled;
+        key-pressed(e) => {
+            if (e.text == " " || e.text == "\n") { root.clicked(); return accept; }
+            reject
+        }
+    }
+    ta := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: MouseCursor.pointer;
+        clicked => { fs.focus(); root.clicked(); }
+    }
+    FocusRing { w: root.width; h: root.height; show: fs.has-focus && fs.enabled; }
+}
+
+export component CheckBox inherits Rectangle {
+    in property <string> text;
+    in-out property <bool> checked;
+    in property <bool> enabled: true;
+    callback toggled(bool);
+
+    min-height: 32px;
+    accessible-role: checkbox;
+    accessible-checkable: true;
+    accessible-checked: checked;
+    accessible-label: text;
+    accessible-action-default => { if (enabled) { checked = !checked; toggled(checked); } }
+    forward-focus: fs;
+
+    HorizontalLayout {
+        spacing: 8px;
+        box := Rectangle {
+            width: 20px;
+            height: 20px;
+            y: (parent.height - self.height) / 2;
+            border-radius: 4px;
+            border-width: root.checked ? 0px : 1px;
+            border-color: root.enabled ? Theme.control-stroke-strong : Theme.text-disabled;
+            background: !root.enabled ? (root.checked ? Theme.accent-disabled : Theme.control-bg-disabled)
+                : root.checked ? (ta.has-hover ? Theme.accent-hover : Theme.accent)
+                : (ta.has-hover ? Theme.control-bg-hover : Theme.control-bg);
+            if root.checked: Icon {
+                name: "check";
+                size: 14px;
+                stroke: 2px;
+                x: 3px;
+                y: 3px;
+                color: Theme.text-on-accent;
+            }
+        }
+        if root.text != "": Text {
+            text: root.text;
+            font-size: Theme.body;
+            color: root.enabled ? Theme.text : Theme.text-disabled;
+            vertical-alignment: center;
+        }
+    }
+    fs := FocusScope {
+        enabled: root.enabled;
+        key-pressed(e) => {
+            if (e.text == " ") { root.checked = !root.checked; root.toggled(root.checked); return accept; }
+            reject
+        }
+    }
+    ta := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: MouseCursor.pointer;
+        clicked => {
+            fs.focus();
+            root.checked = !root.checked;
+            root.toggled(root.checked);
+        }
+    }
+    FocusRing { w: root.width; h: root.height; show: fs.has-focus && fs.enabled; }
+}
+
+export component RadioButton inherits Rectangle {
+    in property <string> text;
+    in property <bool> checked;
+    in property <bool> enabled: true;
+    callback clicked();
+
+    min-height: 32px;
+    accessible-role: radio-button;
+    accessible-checkable: true;
+    accessible-checked: checked;
+    accessible-label: text;
+    accessible-action-default => { if (enabled) { clicked(); } }
+    forward-focus: fs;
+
+    HorizontalLayout {
+        spacing: 8px;
+        Rectangle {
+            width: 20px;
+            height: 20px;
+            y: (parent.height - self.height) / 2;
+            border-radius: 10px;
+            border-width: root.checked ? 0px : 1px;
+            border-color: root.enabled ? Theme.control-stroke-strong : Theme.text-disabled;
+            background: !root.enabled ? Theme.control-bg-disabled
+                : root.checked ? Theme.accent : (ta.has-hover ? Theme.control-bg-hover : Theme.control-bg);
+            if root.checked: Rectangle {
+                width: ta.has-hover ? 10px : 8px;
+                height: self.width;
+                border-radius: self.width / 2;
+                background: Theme.text-on-accent;
+            }
+        }
+        if root.text != "": Text {
+            text: root.text;
+            font-size: Theme.body;
+            color: root.enabled ? Theme.text : Theme.text-disabled;
+            vertical-alignment: center;
+        }
+    }
+    fs := FocusScope {
+        enabled: root.enabled;
+        key-pressed(e) => {
+            if (e.text == " ") { root.clicked(); return accept; }
+            reject
+        }
+    }
+    ta := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: MouseCursor.pointer;
+        clicked => { fs.focus(); root.clicked(); }
+    }
+    FocusRing { w: root.width; h: root.height; show: fs.has-focus && fs.enabled; }
+}
+
+export component ToggleSwitch inherits Rectangle {
+    in-out property <bool> checked;
+    in property <bool> enabled: true;
+    in property <string> on-text: "On";
+    in property <string> off-text: "Off";
+    callback toggled(bool);
+
+    min-height: 32px;
+    accessible-role: switch;
+    accessible-checkable: true;
+    accessible-checked: checked;
+    accessible-action-default => { if (enabled) { checked = !checked; toggled(checked); } }
+    forward-focus: fs;
+
+    HorizontalLayout {
+        spacing: 12px;
+        alignment: end;
+        Text {
+            text: root.checked ? root.on-text : root.off-text;
+            font-size: Theme.body;
+            color: root.enabled ? Theme.text : Theme.text-disabled;
+            vertical-alignment: center;
+        }
+        track := Rectangle {
+            width: 40px;
+            height: 20px;
+            y: (parent.height - self.height) / 2;
+            border-radius: 10px;
+            border-width: root.checked ? 0px : 1px;
+            border-color: root.enabled ? Theme.control-stroke-strong : Theme.text-disabled;
+            background: !root.enabled ? (root.checked ? Theme.accent-disabled : transparent)
+                : root.checked ? (ta.has-hover ? Theme.accent-hover : Theme.accent)
+                : (ta.has-hover ? Theme.subtle-hover : transparent);
+            thumb := Rectangle {
+                width: ta.pressed ? 17px : (ta.has-hover ? 14px : 12px);
+                height: ta.has-hover || ta.pressed ? 14px : 12px;
+                border-radius: self.height / 2;
+                y: (parent.height - self.height) / 2;
+                x: root.checked ? parent.width - self.width - 4px : 4px;
+                background: !root.enabled ? Theme.text-disabled
+                    : root.checked ? Theme.text-on-accent : Theme.text-secondary;
+                animate x, width { duration: 120ms; easing: ease-out; }
+            }
+        }
+    }
+    fs := FocusScope {
+        enabled: root.enabled;
+        key-pressed(e) => {
+            if (e.text == " ") { root.checked = !root.checked; root.toggled(root.checked); return accept; }
+            reject
+        }
+    }
+    ta := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: MouseCursor.pointer;
+        clicked => {
+            fs.focus();
+            root.checked = !root.checked;
+            root.toggled(root.checked);
+        }
+    }
+}
+
+export component LineEdit inherits Rectangle {
+    in-out property <string> text;
+    in property <string> placeholder;
+    in property <bool> enabled: true;
+    in property <bool> read-only;
+    callback edited(string);
+    callback accepted(string);
+
+    min-width: 120px;
+    height: 32px;
+    border-radius: Theme.radius-control;
+    border-width: 1px;
+    border-color: Theme.control-stroke;
+    background: !enabled ? Theme.control-bg-disabled
+        : input.has-focus ? Theme.input-bg-focus
+        : ta.has-hover ? Theme.control-bg-hover : Theme.input-bg;
+    clip: true;
+    accessible-role: text-input;
+    accessible-value: text;
+    accessible-placeholder-text: placeholder;
+    forward-focus: input;
+
+    ta := TouchArea {
+        mouse-cursor: MouseCursor.text;
+        clicked => { input.focus(); }
+    }
+    if root.text == "": Text {
+        x: 11px;
+        width: parent.width - 22px;
+        height: parent.height;
+        text: root.placeholder;
+        font-size: Theme.body;
+        color: Theme.text-secondary;
+        vertical-alignment: center;
+        overflow: elide;
+    }
+    input := TextInput {
+        x: 11px;
+        width: parent.width - 22px;
+        height: parent.height;
+        text <=> root.text;
+        enabled: root.enabled;
+        read-only: root.read-only;
+        single-line: true;
+        font-size: Theme.body;
+        color: root.enabled ? Theme.text : Theme.text-disabled;
+        selection-background-color: Theme.accent;
+        selection-foreground-color: Theme.text-on-accent;
+        vertical-alignment: center;
+        edited => { root.edited(self.text); }
+        accepted => { root.accepted(self.text); }
+    }
+    // Solid accent underline while focused (Windows 11 input focus).
+    Rectangle {
+        y: parent.height - self.height;
+        height: input.has-focus ? 2px : 1px;
+        background: input.has-focus ? Theme.accent : Theme.control-stroke-strong;
+    }
+}
+
+export component ComboBox inherits Rectangle {
+    in property <[string]> model;
+    in-out property <int> current-index: 0;
+    in property <bool> enabled: true;
+    out property <string> current-value: current-index >= 0 && current-index < model.length ? model[current-index] : "";
+    callback selected(int);
+
+    min-width: 120px;
+    height: 32px;
+    border-radius: Theme.radius-control;
+    border-width: 1px;
+    border-color: Theme.control-stroke;
+    background: !enabled ? Theme.control-bg-disabled
+        : ta.pressed ? Theme.control-bg-pressed
+        : ta.has-hover ? Theme.control-bg-hover : Theme.control-bg;
+    accessible-role: combobox;
+    accessible-value: current-value;
+    forward-focus: fs;
+
+    HorizontalLayout {
+        padding-left: 11px;
+        padding-right: 8px;
+        spacing: 8px;
+        Text {
+            text: root.current-value;
+            font-size: Theme.body;
+            color: root.enabled ? Theme.text : Theme.text-disabled;
+            vertical-alignment: center;
+            overflow: elide;
+        }
+        Icon {
+            name: "chevron-down";
+            size: 14px;
+            y: (parent.height - self.height) / 2;
+            color: root.enabled ? Theme.text-secondary : Theme.text-disabled;
+        }
+    }
+    fs := FocusScope {
+        enabled: root.enabled;
+        key-pressed(e) => {
+            if (e.text == Key.DownArrow && root.current-index < root.model.length - 1) {
+                root.current-index += 1; root.selected(root.current-index); return accept;
+            }
+            if (e.text == Key.UpArrow && root.current-index > 0) {
+                root.current-index -= 1; root.selected(root.current-index); return accept;
+            }
+            if (e.text == " " || e.text == "\n") { popup.show(); return accept; }
+            reject
+        }
+    }
+    ta := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: MouseCursor.pointer;
+        clicked => { fs.focus(); popup.show(); }
+    }
+    FocusRing { w: root.width; h: root.height; show: fs.has-focus && fs.enabled; }
+
+    // The list opens below the box, or above it when there is no room, and scrolls when
+    // neither side fits.
+    property <length> list-height: min(root.model.length * 36px + 8px, 368px);
+    property <length> space-below: Metrics.window-height - root.absolute-position.y - root.height - 8px;
+    property <length> space-above: root.absolute-position.y - 8px;
+    property <length> popup-height: list-height <= space-below || list-height <= space-above ? list-height
+        : max(space-below, space-above);
+    popup := PopupWindow {
+        x: 0;
+        y: root.list-height <= root.space-below || root.space-below >= root.space-above
+            ? root.height + 2px : -root.popup-height - 2px;
+        width: root.width;
+        height: root.popup-height;
+        Rectangle {
+            background: Theme.popup-bg;
+            border-radius: 8px;
+            border-width: 1px;
+            border-color: Theme.popup-stroke;
+            clip: true;
+            Flickable {
+                content-height: items.preferred-height;
+                items := VerticalLayout {
+                    padding: 4px;
+                    for item[i] in root.model: Rectangle {
+                        height: 36px;
+                        border-radius: 4px;
+                        background: row.has-hover || i == root.current-index ? Theme.subtle-hover : transparent;
+                        if i == root.current-index: Rectangle {
+                            x: 0;
+                            width: 3px;
+                            height: 16px;
+                            border-radius: 1.5px;
+                            background: Theme.accent;
+                        }
+                        Text {
+                            x: 12px;
+                            width: parent.width - 16px;
+                            text: item;
+                            font-size: Theme.body;
+                            color: Theme.text;
+                            vertical-alignment: center;
+                            overflow: elide;
+                        }
+                        row := TouchArea {
+                            clicked => {
+                                root.current-index = i;
+                                root.selected(i);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+export component ProgressBar inherits Rectangle {
+    in property <float> progress;
+    in property <bool> indeterminate;
+    in property <bool> error;
+    height: 3px;
+    clip: true;
+    accessible-role: progress-indicator;
+    accessible-value-minimum: 0;
+    accessible-value-maximum: 100;
+    accessible-value: indeterminate ? 0 : progress * 100;
+
+    // 1 px solid track, 3 px solid bar (Windows 11).
+    Rectangle {
+        y: 1px;
+        height: 1px;
+        background: Theme.control-stroke-strong;
+    }
+    if !root.indeterminate: Rectangle {
+        x: 0;
+        width: max(0, min(1, root.progress)) * parent.width;
+        border-radius: 1.5px;
+        background: root.error ? Theme.critical : Theme.accent;
+        animate width { duration: 200ms; }
+    }
+    if root.indeterminate: Rectangle {
+        property <float> phase: mod(animation-tick() / 1ms, 1600) / 1600;
+        width: parent.width * 0.35;
+        x: -self.width + (parent.width + self.width) * phase;
+        border-radius: 1.5px;
+        background: root.error ? Theme.critical : Theme.accent;
+    }
+}

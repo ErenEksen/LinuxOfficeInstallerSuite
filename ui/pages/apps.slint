@@ -1,0 +1,66 @@
+// Office apps page (installer-ui: Office apps and Wine runtimes pages).
+import { Theme } from "../theme.slint";
+import { AppState, Page } from "../state.slint";
+import { Button } from "../kit/controls.slint";
+import { ListRow, InfoBar, Severity, ScrollArea } from "../kit/layout.slint";
+import { PageHeader } from "install.slint";
+
+export component AppsPage inherits Rectangle {
+    ScrollArea {
+        content-height: col.preferred-height;
+        col := VerticalLayout {
+            x: max(0px, (parent.width - self.width) / 2);
+            width: min(1000px, parent.width);
+            padding: 36px;
+            padding-top: 28px;
+            spacing: 8px;
+            alignment: start;
+
+            HorizontalLayout {
+                PageHeader { text: "Office apps"; }
+                HorizontalLayout {
+                    alignment: end;
+                    spacing: 8px;
+                    Button { text: "Refresh"; icon: "refresh"; y: (parent.height - self.height) / 2; clicked => { AppState.refresh-apps(); } }
+                    Button {
+                        text: "Stop all Office apps";
+                        icon: "stop";
+                        y: (parent.height - self.height) / 2;
+                        enabled: !AppState.installing && AppState.office-apps.length > 0;
+                        clicked => { AppState.dialog = "stop-office-apps"; }
+                    }
+                    Button {
+                        text: "Uninstall Office";
+                        icon: "trash";
+                        y: (parent.height - self.height) / 2;
+                        enabled: !AppState.installing && (AppState.office-installed || AppState.office-apps.length > 0);
+                        clicked => { AppState.dialog-check = true; AppState.dialog = "uninstall-office"; }
+                    }
+                }
+            }
+            if AppState.office-needs-repair && !AppState.installing: InfoBar {
+                severity: Severity.caution;
+                title: "Office needs an update";
+                message: "This installation is missing parts that Microsoft account sign-in needs (Wine Gecko, the HTML engine, WebView2 and the sign-in helper). Applying them closes running Office apps and downloads about 320 MB. Office is not reinstalled.";
+                Button { text: "Apply fixes"; clicked => { AppState.repair-office(); } }
+            }
+            if AppState.apps-message != "": InfoBar { severity: Severity.info; message: AppState.apps-message; }
+            if AppState.office-apps.length == 0: InfoBar {
+                severity: Severity.info;
+                title: "No Office apps found";
+                message: "Install Office from the Install page. Installed apps appear here.";
+                Button { text: "Go to Install"; clicked => { AppState.page = Page.install; } }
+            }
+            for app in AppState.office-apps: ListRow {
+                image: app.icon;
+                icon: "document";
+                title: app.name;
+                subtitle: app.exe;
+                action-text: "Launch";
+                menu: [{ text: "Recreate launcher", icon: "refresh", enabled: true, note: "" }];
+                action => { AppState.launch-app(app.id); }
+                menu-selected(i) => { AppState.recreate-launcher(app.id); }
+            }
+        }
+    }
+}

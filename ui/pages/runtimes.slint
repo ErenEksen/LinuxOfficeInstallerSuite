@@ -1,0 +1,117 @@
+// Wine runtimes page (installer-ui: Office apps and Wine runtimes pages).
+import { Theme } from "../theme.slint";
+import { AppState } from "../state.slint";
+import { Button, AccentButton, ProgressBar } from "../kit/controls.slint";
+import { ListRow, InfoBar, Severity, ScrollArea } from "../kit/layout.slint";
+import { PageHeader } from "install.slint";
+
+export component RuntimesPage inherits Rectangle {
+    ScrollArea {
+        content-height: col.preferred-height;
+        col := VerticalLayout {
+            x: max(0px, (parent.width - self.width) / 2);
+            width: min(1000px, parent.width);
+            padding: 36px;
+            padding-top: 28px;
+            spacing: 8px;
+            alignment: start;
+
+            HorizontalLayout {
+                PageHeader { text: "Wine runtimes"; }
+                HorizontalLayout {
+                    alignment: end;
+                    AccentButton {
+                        text: "Install new version";
+                        icon: "add";
+                        y: (parent.height - self.height) / 2;
+                        enabled: !AppState.runner-busy && !AppState.installing;
+                        clicked => { AppState.dialog = "install-runner"; AppState.load-releases(); }
+                    }
+                }
+            }
+            Text {
+                text: "Bottles Soda runners in ~/.msoffice/runners. Office uses the active runner the next time it starts.";
+                font-size: Theme.body;
+                color: Theme.text-secondary;
+                wrap: word-wrap;
+            }
+            if AppState.runner-busy: Rectangle {
+                border-radius: Theme.radius-card;
+                border-width: 1px;
+                border-color: Theme.card-stroke;
+                background: Theme.card-bg;
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 8px;
+                    Text { text: AppState.runner-status; font-size: Theme.body; color: Theme.text; }
+                    ProgressBar { progress: AppState.runner-progress; indeterminate: AppState.runner-progress <= 0; }
+                }
+            }
+            if AppState.runner-error != "": InfoBar { severity: Severity.critical; title: "Runner operation failed"; message: AppState.runner-error; }
+            if AppState.runners.length == 0: InfoBar {
+                severity: Severity.info;
+                message: "No runner is installed yet. The default runner is installed automatically with Office.";
+            }
+            for r in AppState.runners: ListRow {
+                icon: "runtimes";
+                title: r.tag;
+                subtitle: r.subtitle;
+                badge: r.active ? "Active" : "";
+                menu: [
+                    { text: "Set as active", icon: "check", enabled: !r.active && r.supported && !AppState.runner-busy,
+                      note: r.supported ? "" : "Too old for Office: needs Soda 11.0-32 or later." },
+                    { text: "Remove", icon: "trash", enabled: !r.active && !AppState.runner-busy,
+                      note: r.active ? "The active runner cannot be removed." : "" },
+                ];
+                menu-selected(i) => {
+                    if (i == 0) { AppState.set-active-runner(r.tag); }
+                    if (i == 1) { AppState.dialog-arg = r.tag; AppState.dialog = "remove-runner"; }
+                }
+            }
+        }
+    }
+}
+
+// Contents of the "Install new version" dialog.
+export component ReleaseList inherits VerticalLayout {
+    spacing: 4px;
+    if AppState.releases-loading: ProgressBar { indeterminate: true; }
+    if AppState.releases-error != "": InfoBar { severity: Severity.critical; message: AppState.releases-error; }
+    ScrollArea {
+        height: min(360px, list.preferred-height);
+        content-height: list.preferred-height;
+        list := VerticalLayout {
+            spacing: 4px;
+            for r in AppState.releases: Rectangle {
+                min-height: 48px;
+                border-radius: Theme.radius-control;
+                background: Theme.card-bg;
+                border-width: 1px;
+                border-color: Theme.card-stroke;
+                HorizontalLayout {
+                    padding-left: 12px;
+                    padding-right: 8px;
+                    spacing: 8px;
+                    VerticalLayout {
+                        alignment: center;
+                        Text { text: r.tag; font-size: Theme.body; color: Theme.text; }
+                        Text { text: r.subtitle; font-size: Theme.caption; color: Theme.text-secondary; }
+                    }
+                    if r.installed: Text {
+                        text: "Installed";
+                        font-size: Theme.caption;
+                        color: Theme.text-secondary;
+                        vertical-alignment: center;
+                        horizontal-stretch: 0;
+                    }
+                    if !r.installed: Button {
+                        text: "Install";
+                        y: (parent.height - self.height) / 2;
+                        enabled: r.installable && !AppState.runner-busy;
+                        clicked => { AppState.install-release(r.tag); AppState.dialog = ""; }
+                    }
+                }
+            }
+        }
+    }
+}

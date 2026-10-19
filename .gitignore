@@ -1,0 +1,21 @@
+# Rust build output
+/target
+
+# Partial downloads and logs
+*.part
+*.log
+
+# Editors and OS files
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+
+# Local Claude Code settings
+.claude/settings.local.json
+
+# Stray ImageMagick output
+/info:
+/info:-
+/histogram:info:-
