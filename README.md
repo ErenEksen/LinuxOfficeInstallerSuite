@@ -3,8 +3,10 @@
 ![Linux Office Installer Suite](docs/images/banner.png)
 
 > [!WARNING]
+> Both Soda (Wine) and this suite are highly experimental. Performance problems and bugs are expected.
+>
 > **Experimental project. Not ready for production.**
-> Expect bugs and breaking changes. Don't rely on it for work you can't afford to lose.
+> Don't rely on it for work you can't afford to lose.
 
 A one-click installer for **Microsoft 365** and **Office 2024** on Linux, for people who already own an Office license. It is a single Rust binary with a [Slint](https://slint.dev) interface that runs directly on your system.
 
