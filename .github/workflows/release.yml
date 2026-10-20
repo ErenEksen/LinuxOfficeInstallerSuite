@@ -1,10 +1,11 @@
 # Builds and publishes the app on every push to main, and a versioned release for v* tags.
 #
 # - Push to main: tests, release build, then the rolling "latest" prerelease is replaced
-#   with the new binary.
+#   with the new binary and AppImage.
 # - Tag v*: the same, plus a permanent release named after the tag.
 #
 # Built on Ubuntu 22.04 so the binary needs glibc 2.35 or newer and runs on most distros.
+# Built for x86-64-v3 (.cargo/config.toml), so it needs a Haswell / Excavator or newer CPU.
 name: Release build
 
 on:
@@ -22,7 +23,8 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
-  ASSET: linux-office-installer-suite-x86_64.tar.gz
+  ASSET: linux-office-installer-suite-x86_64_v3.tar.gz
+  APPIMAGE: linux-office-installer-suite-x86_64_v3.AppImage
 
 jobs:
   build:
@@ -45,7 +47,7 @@ jobs:
         run: cargo test --locked
 
       - name: Build
-        run: cargo build --release --locked
+        run: scripts/build-appimage.sh
 
       - name: Package
         run: |
@@ -53,6 +55,7 @@ jobs:
           cp target/release/linux-office-installer-suite dist/
           tar -C dist -czf "$ASSET" linux-office-installer-suite
           sha256sum "$ASSET" > "$ASSET.sha256"
+          cp "target/appimage/$APPIMAGE" "target/appimage/$APPIMAGE.sha256" .
 
       - uses: actions/upload-artifact@v4
         with:
@@ -60,6 +63,8 @@ jobs:
           path: |
             ${{ env.ASSET }}
             ${{ env.ASSET }}.sha256
+            ${{ env.APPIMAGE }}
+            ${{ env.APPIMAGE }}.sha256
 
       - name: Publish the latest build
         if: github.ref == 'refs/heads/main'
@@ -67,7 +72,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete latest --yes --cleanup-tag || true
-          gh release create latest "$ASSET" "$ASSET.sha256" \
+          gh release create latest "$ASSET" "$ASSET.sha256" "$APPIMAGE" "$APPIMAGE.sha256" \
             --prerelease \
             --target "$GITHUB_SHA" \
             --title "Latest build" \
@@ -78,6 +83,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" "$ASSET" "$ASSET.sha256" \
+          gh release create "$GITHUB_REF_NAME" "$ASSET" "$ASSET.sha256" "$APPIMAGE" "$APPIMAGE.sha256" \
             --title "$GITHUB_REF_NAME" \
             --generate-notes

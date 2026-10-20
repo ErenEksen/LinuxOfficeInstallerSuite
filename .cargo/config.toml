@@ -1,0 +1,3 @@
+# Every x86_64 build (local and CI) targets x86-64-v3 (Haswell / Excavator and newer).
+[target.x86_64-unknown-linux-gnu]
+rustflags = ["-C", "target-cpu=x86-64-v3"]
