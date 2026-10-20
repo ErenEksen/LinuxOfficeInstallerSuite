@@ -46,7 +46,7 @@ pub fn render(paths: &Paths, app: App) -> String {
     format!(
         "[Desktop Entry]\n\
          Type=Application\n\
-         Version=1.5\n\
+         Version=1.4\n\
          Name={name}\n\
          GenericName={generic}\n\
          Comment={name} running in Wine\n\

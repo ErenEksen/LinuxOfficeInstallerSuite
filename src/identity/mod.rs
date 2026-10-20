@@ -73,7 +73,7 @@ pub fn render_handler(paths: &Paths) -> String {
     format!(
         "[Desktop Entry]\n\
          Type=Application\n\
-         Version=1.5\n\
+         Version=1.4\n\
          Name=Microsoft sign-in for Office\n\
          Comment=Returns a Microsoft account sign-in from the browser to Office running in Wine\n\
          Exec={} callback %u\n\

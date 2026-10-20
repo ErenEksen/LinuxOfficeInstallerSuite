@@ -27,7 +27,7 @@ pub fn render_desktop_entry(paths: &Paths) -> String {
     format!(
         "[Desktop Entry]\n\
          Type=Application\n\
-         Version=1.5\n\
+         Version=1.4\n\
          Name=Linux Office Installer Suite\n\
          GenericName=Office Installer\n\
          Comment=Install Microsoft 365 or Office 2024 with Wine\n\
