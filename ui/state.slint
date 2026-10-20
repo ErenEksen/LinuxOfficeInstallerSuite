@@ -48,6 +48,14 @@ export global AppState {
     in property <string> notice;
     callback dismiss-notice();
 
+    // Window chrome (the window has no system title bar).
+    in property <bool> window-maximized;
+    callback window-drag();
+    callback window-resize(string);
+    callback window-minimize();
+    callback window-toggle-maximize();
+    callback window-close();
+
     // Self-install offer (app-settings: Self-install).
     in property <bool> offer-self-install;
     in property <string> self-install-message;

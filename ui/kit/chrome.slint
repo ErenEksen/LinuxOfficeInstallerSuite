@@ -1,0 +1,137 @@
+// Windows 11 style window chrome for the frameless window: title bar with caption buttons,
+// a 1 px window border and invisible resize edges. Rust does the window manager calls.
+import { Theme } from "../theme.slint";
+import { Icon } from "icon.slint";
+
+// 46×32 caption button; the close button turns red on hover like on Windows.
+component CaptionButton inherits Rectangle {
+    in property <string> icon;
+    in property <string> label;
+    in property <bool> close;
+    callback clicked();
+
+    width: 46px;
+    background: ta.pressed ? (close ? Theme.caption-close-pressed : Theme.subtle-pressed)
+        : ta.has-hover ? (close ? Theme.caption-close-hover : Theme.subtle-hover) : transparent;
+    accessible-role: button;
+    accessible-label: label;
+    accessible-action-default => { clicked(); }
+
+    Icon {
+        name: root.icon;
+        size: 10px;
+        stroke: 1px;
+        color: root.close && (ta.has-hover || ta.pressed) ? #FFFFFF : Theme.text;
+    }
+    ta := TouchArea {
+        clicked => { root.clicked(); }
+    }
+}
+
+export component TitleBar inherits Rectangle {
+    in property <string> title;
+    in property <image> icon;
+    in property <bool> maximized;
+    callback drag();
+    callback minimize();
+    callback toggle-maximize();
+    callback close();
+
+    height: 32px;
+
+    // Drag area: the window moves once the pointer travels a few pixels with the button
+    // held, so a double-click still reaches us and toggles maximize.
+    property <bool> dragging;
+    TouchArea {
+        pointer-event(e) => {
+            if (e.kind == PointerEventKind.down) { root.dragging = false; }
+        }
+        moved => {
+            if (self.pressed && !root.dragging
+                && (abs(self.mouse-x - self.pressed-x) > 4px || abs(self.mouse-y - self.pressed-y) > 4px)) {
+                root.dragging = true;
+                root.drag();
+            }
+        }
+        double-clicked => { root.toggle-maximize(); }
+    }
+    Image {
+        x: 16px;
+        y: (parent.height - self.height) / 2;
+        width: 16px;
+        height: 16px;
+        source: root.icon;
+    }
+    Text {
+        x: 44px;
+        width: parent.width - self.x - buttons.width - 8px;
+        height: parent.height;
+        text: root.title;
+        font-size: Theme.caption;
+        color: Theme.text;
+        vertical-alignment: center;
+        overflow: elide;
+    }
+    buttons := HorizontalLayout {
+        width: 3 * 46px;
+        x: parent.width - self.width;
+        height: parent.height;
+        CaptionButton {
+            icon: "chrome-minimize"; label: "Minimize";
+            clicked => { root.minimize(); }
+        }
+        CaptionButton {
+            icon: root.maximized ? "chrome-restore" : "chrome-maximize";
+            label: root.maximized ? "Restore" : "Maximize";
+            clicked => { root.toggle-maximize(); }
+        }
+        CaptionButton {
+            icon: "chrome-close"; label: "Close"; close: true;
+            clicked => { root.close(); }
+        }
+    }
+}
+
+component ResizeHandle inherits TouchArea {
+    in property <string> direction;
+    callback resize(string);
+    pointer-event(e) => {
+        if (e.kind == PointerEventKind.down && e.button == PointerEventButton.left) {
+            root.resize(direction);
+        }
+    }
+}
+
+// Invisible resize handles along the window edges. `resize` gets the edge: "n", "s", "e",
+// "w", "ne", "nw", "se" or "sw".
+export component ResizeEdges {
+    callback resize(string);
+
+    property <length> edge: 5px;
+    property <length> corner: 12px;
+
+    ResizeHandle { direction: "n"; x: corner; y: 0; width: parent.width - 2 * corner; height: edge;
+        mouse-cursor: MouseCursor.ns-resize; resize(d) => { root.resize(d); } }
+    ResizeHandle { direction: "s"; x: corner; y: parent.height - edge; width: parent.width - 2 * corner; height: edge;
+        mouse-cursor: MouseCursor.ns-resize; resize(d) => { root.resize(d); } }
+    ResizeHandle { direction: "w"; x: 0; y: corner; width: edge; height: parent.height - 2 * corner;
+        mouse-cursor: MouseCursor.ew-resize; resize(d) => { root.resize(d); } }
+    ResizeHandle { direction: "e"; x: parent.width - edge; y: corner; width: edge; height: parent.height - 2 * corner;
+        mouse-cursor: MouseCursor.ew-resize; resize(d) => { root.resize(d); } }
+    ResizeHandle { direction: "nw"; x: 0; y: 0; width: corner; height: edge;
+        mouse-cursor: MouseCursor.nwse-resize; resize(d) => { root.resize(d); } }
+    ResizeHandle { direction: "nw"; x: 0; y: 0; width: edge; height: corner;
+        mouse-cursor: MouseCursor.nwse-resize; resize(d) => { root.resize(d); } }
+    ResizeHandle { direction: "ne"; x: parent.width - corner; y: 0; width: corner; height: edge;
+        mouse-cursor: MouseCursor.nesw-resize; resize(d) => { root.resize(d); } }
+    ResizeHandle { direction: "ne"; x: parent.width - edge; y: 0; width: edge; height: corner;
+        mouse-cursor: MouseCursor.nesw-resize; resize(d) => { root.resize(d); } }
+    ResizeHandle { direction: "sw"; x: 0; y: parent.height - edge; width: corner; height: edge;
+        mouse-cursor: MouseCursor.nesw-resize; resize(d) => { root.resize(d); } }
+    ResizeHandle { direction: "sw"; x: 0; y: parent.height - corner; width: edge; height: corner;
+        mouse-cursor: MouseCursor.nesw-resize; resize(d) => { root.resize(d); } }
+    ResizeHandle { direction: "se"; x: parent.width - corner; y: parent.height - edge; width: corner; height: edge;
+        mouse-cursor: MouseCursor.nwse-resize; resize(d) => { root.resize(d); } }
+    ResizeHandle { direction: "se"; x: parent.width - edge; y: parent.height - corner; width: edge; height: corner;
+        mouse-cursor: MouseCursor.nwse-resize; resize(d) => { root.resize(d); } }
+}

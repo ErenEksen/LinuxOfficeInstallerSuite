@@ -3,6 +3,7 @@ import { Theme, ThemeMode, Metrics } from "theme.slint";
 import { AppState, Page, AppChoice, StageRow, OfficeAppRow, RunnerRow, ReleaseRow } from "state.slint";
 import { NavPane, NavItem, ContentDialog, ScrollArea } from "kit/layout.slint";
 import { CheckBox, LineEdit } from "kit/controls.slint";
+import { TitleBar, ResizeEdges } from "kit/chrome.slint";
 import { InstallPage } from "pages/install.slint";
 import { ProgressPage } from "pages/progress.slint";
 import { AppsPage } from "pages/apps.slint";
@@ -29,13 +30,16 @@ export component AppWindow inherits Window {
     min-height: 480px;
     background: Theme.window-bg;
     default-font-family: Theme.font;
+    // The title bar is drawn by the app (kit/chrome.slint).
+    no-frame: true;
     property <bool> compact: self.width < 1008px;
     init => { Metrics.window-height = self.height; }
     changed height => { Metrics.window-height = self.height; }
 
     nav := NavPane {
             x: 0;
-            height: parent.height;
+            y: title-bar.height;
+            height: parent.height - title-bar.height;
             compact: root.compact;
             NavItem {
                 icon: "install"; text: "Install"; compact: root.compact;
@@ -66,8 +70,9 @@ export component AppWindow inherits Window {
         }
     Rectangle {
             x: nav.width;
+            y: title-bar.height;
             width: parent.width - nav.width;
-            height: parent.height;
+            height: parent.height - title-bar.height;
             background: Theme.window-bg;
             if AppState.page == Page.install: InstallPage { }
             if AppState.page == Page.progress: ProgressPage { }
@@ -201,5 +206,26 @@ export component AppWindow inherits Window {
         close-text: "Close";
         close-clicked => { AppState.dialog = ""; }
         ReleaseList { }
+    }
+
+    // Window chrome sits above the dialogs, so the window can still be moved, minimized or
+    // closed while one is open.
+    title-bar := TitleBar {
+        y: 0;
+        width: parent.width;
+        title: root.title;
+        icon: root.icon;
+        maximized: AppState.window-maximized;
+        drag => { AppState.window-drag(); }
+        minimize => { AppState.window-minimize(); }
+        toggle-maximize => { AppState.window-toggle-maximize(); }
+        close => { AppState.window-close(); }
+    }
+    if !AppState.window-maximized: Rectangle {
+        border-width: 1px;
+        border-color: Theme.window-stroke;
+    }
+    if !AppState.window-maximized: ResizeEdges {
+        resize(edge) => { AppState.window-resize(edge); }
     }
 }

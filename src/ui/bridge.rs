@@ -110,6 +110,7 @@ pub fn setup(window: &AppWindow, paths: Paths, config: Config, notice: Option<St
         }
     });
 
+    super::chrome::wire(window);
     wire_misc(window, &ctx);
     wire_form(window, &ctx);
     wire_deps(window, &ctx);

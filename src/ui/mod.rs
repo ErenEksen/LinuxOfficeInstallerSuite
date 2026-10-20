@@ -1,4 +1,5 @@
 pub mod bridge;
+mod chrome;
 
 /// Guard for installer-ui "No gradients": no gradient brush anywhere in `ui/**/*.slint`, and
 /// only checked-safe items imported from Slint's std-widgets.

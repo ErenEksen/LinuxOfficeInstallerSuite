@@ -51,6 +51,11 @@ export component Icon {
             : root.name == "link" ? "M10 14 L14 10 M8 12 L6 14 A3 3 0 0 0 10 18 L12 16 M16 12 L18 10 A3 3 0 0 0 14 6 L12 8"
             : root.name == "remove" ? "M6 12 L18 12"
             : root.name == "add" ? "M12 5 L12 19 M5 12 L19 12"
+            // Caption button glyphs, drawn at 10 px with a 1 px stroke.
+            : root.name == "chrome-minimize" ? "M1 12 L23 12"
+            : root.name == "chrome-maximize" ? "M1 1 L23 1 L23 23 L1 23 Z"
+            : root.name == "chrome-restore" ? "M1 6 L18 6 L18 23 L1 23 Z M6 6 L6 1 L23 1 L23 18 L18 18"
+            : root.name == "chrome-close" ? "M1 1 L23 23 M23 1 L1 23"
             : "M12 3 A9 9 0 1 1 11.99 3";
     }
 }
