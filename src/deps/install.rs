@@ -44,7 +44,7 @@ pub fn check_32bit_repo_with(family: Family, pacman_conf: &Path, dpkg_foreign: i
         Family::Arch => pacman_multilib_enabled(&std::fs::read_to_string(pacman_conf).unwrap_or_default()),
         Family::Debian => dpkg_has_i386(&dpkg_foreign()),
         // Fedora ships i686 packages in the main repos; unknown distros install by hand.
-        Family::Fedora | Family::Unknown => true,
+        Family::Fedora | Family::NixOS | Family::Unknown => true,
     };
     if enabled {
         return RepoStatus::Enabled;
@@ -72,7 +72,7 @@ pub fn install_command(family: Family, packages: &[&str]) -> Option<Vec<String>>
             "-c".into(),
             format!("apt-get update && apt-get install -y {}", packages.join(" ")),
         ],
-        Family::Unknown => return None,
+        Family::NixOS | Family::Unknown => return None,
     };
     Some(cmd)
 }

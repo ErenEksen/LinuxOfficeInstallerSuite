@@ -1,7 +1,7 @@
 // Install page: dependency status and the deployment form (installer-ui: Install page).
 import { Theme } from "../theme.slint";
 import { AppState } from "../state.slint";
-import { Button, AccentButton, CheckBox, RadioButton, ToggleSwitch, LineEdit, ComboBox, ProgressBar } from "../kit/controls.slint";
+import { Button, AccentButton, CopyButton, CheckBox, RadioButton, ToggleSwitch, LineEdit, ComboBox, ProgressBar } from "../kit/controls.slint";
 import { SettingsCard, Expander, InfoBar, Severity, ScrollArea } from "../kit/layout.slint";
 import { Icon } from "../kit/icon.slint";
 
@@ -61,6 +61,7 @@ export component InstallPage inherits Rectangle {
                 header: AppState.distro-name == "" ? "System dependencies" : AppState.distro-name;
                 description: !AppState.deps-checked ? "Checking…"
                     : AppState.support-level + " · " + (AppState.deps-ready ? "All required libraries and tools are installed."
+                    : AppState.deps-undetected ? "Could not detect the installed libraries."
                     : AppState.deps-missing.length + " required items are missing.");
                 if AppState.deps-busy: ProgressBar { width: 120px; indeterminate: true; }
                 Button {
@@ -80,7 +81,18 @@ export component InstallPage inherits Rectangle {
                 title: "Package installation failed";
                 message: AppState.deps-error;
             }
-            if AppState.deps-checked && !AppState.deps-ready: InfoBar {
+            if AppState.deps-checked && AppState.deps-undetected: InfoBar {
+                severity: Severity.critical;
+                title: AppState.deps-undetected-title;
+                message: AppState.deps-undetected-message;
+                CopyButton { copy-text: AppState.deps-copy-text; }
+                Button {
+                    text: "Check again";
+                    enabled: !AppState.deps-busy;
+                    clicked => { AppState.check-deps(); }
+                }
+            }
+            if AppState.deps-checked && !AppState.deps-ready && !AppState.deps-undetected: InfoBar {
                 severity: Severity.caution;
                 title: "Missing: " + AppState.deps-missing.length + " items";
                 message: AppState.repo-instructions != "" ? AppState.repo-instructions
@@ -96,6 +108,7 @@ export component InstallPage inherits Rectangle {
                     enabled: !AppState.deps-busy;
                     clicked => { AppState.check-deps(); }
                 }
+                CopyButton { copy-text: AppState.deps-copy-text; }
             }
             if AppState.deps-checked && !AppState.deps-ready: Rectangle {
                 border-radius: Theme.radius-card;
@@ -105,6 +118,12 @@ export component InstallPage inherits Rectangle {
                 VerticalLayout {
                     padding: 16px;
                     spacing: 2px;
+                    if AppState.deps-undetected: Text {
+                        text: "Required libraries and tools:";
+                        font-size: Theme.caption;
+                        font-weight: Theme.semibold;
+                        color: Theme.text;
+                    }
                     for m in AppState.deps-missing: Text {
                         text: m;
                         font-size: Theme.caption;

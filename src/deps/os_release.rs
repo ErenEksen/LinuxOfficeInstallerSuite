@@ -7,6 +7,8 @@ pub enum Family {
     Arch,
     Fedora,
     Debian,
+    /// No package map: libraries live in the Nix store, outside the loader's search path.
+    NixOS,
     Unknown,
 }
 
@@ -25,7 +27,7 @@ impl Family {
         match self {
             Family::Arch => SupportLevel::Supported,
             Family::Fedora | Family::Debian => SupportLevel::Untested,
-            Family::Unknown => SupportLevel::Manual,
+            Family::NixOS | Family::Unknown => SupportLevel::Manual,
         }
     }
 
@@ -34,6 +36,7 @@ impl Family {
             "arch" => Some(Family::Arch),
             "fedora" => Some(Family::Fedora),
             "debian" | "ubuntu" => Some(Family::Debian),
+            "nixos" => Some(Family::NixOS),
             _ => None,
         }
     }
@@ -133,6 +136,7 @@ mod tests {
         ("Ubuntu", "PRETTY_NAME=\"Ubuntu 24.04.3 LTS\"\nNAME=\"Ubuntu\"\nID=ubuntu\nID_LIKE=debian\n", Family::Debian),
         ("Mint", "NAME=\"Linux Mint\"\nID=linuxmint\nID_LIKE=\"ubuntu debian\"\nPRETTY_NAME=\"Linux Mint 22.2\"\n", Family::Debian),
         ("openSUSE", "NAME=\"openSUSE Tumbleweed\"\nID=\"opensuse-tumbleweed\"\nID_LIKE=\"opensuse suse\"\nPRETTY_NAME=\"openSUSE Tumbleweed\"\n", Family::Unknown),
+        ("NixOS", "ANSI_COLOR=\"0;38;2;126;186;228\"\nID=nixos\nNAME=NixOS\nPRETTY_NAME=\"NixOS 25.05 (Warbler)\"\n", Family::NixOS),
         ("Alpine", "NAME=\"Alpine Linux\"\nID=alpine\nVERSION_ID=3.22.1\nPRETTY_NAME=\"Alpine Linux v3.22\"\n", Family::Unknown),
     ];
 
@@ -150,6 +154,7 @@ mod tests {
         assert_eq!(Family::Arch.support().label(), "Supported");
         assert_eq!(Family::Fedora.support().label(), "Untested");
         assert_eq!(Family::Debian.support().label(), "Untested");
+        assert_eq!(Family::NixOS.support().label(), "Manual");
         assert_eq!(Family::Unknown.support().label(), "Manual");
     }
 

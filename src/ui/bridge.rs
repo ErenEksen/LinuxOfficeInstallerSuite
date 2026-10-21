@@ -271,21 +271,17 @@ fn push_deps(w: &AppWindow, r: &DepReport) {
     let level = r.family().support();
     s.set_support_level(ss(level.label()));
     s.set_support_untested(level == SupportLevel::Untested);
-    let mut expl = level.explanation().to_string();
+    let mut expl = r.support_explanation().to_string();
     if level == SupportLevel::Untested {
         expl.push(' ');
         expl.push_str(deps::maps::UNTESTED_NOTE);
     }
     s.set_support_explanation(ss(expl));
-    s.set_deps_missing(model(
-        r.missing
-            .iter()
-            .map(|m| ss(match m.package {
-                Some(p) => format!("{}  →  {p}", m.name),
-                None => m.name.clone(),
-            }))
-            .collect(),
-    ));
+    s.set_deps_missing(model(r.missing.iter().map(|m| ss(m.line())).collect()));
+    s.set_deps_undetected(r.undetected.is_some());
+    s.set_deps_undetected_title(ss(r.undetected.map(|u| u.title()).unwrap_or_default()));
+    s.set_deps_undetected_message(ss(r.undetected.map(|u| u.message()).unwrap_or_default()));
+    s.set_deps_copy_text(ss(r.copy_text()));
     let pkgs = r.packages();
     s.set_deps_packages(ss(pkgs.join(" ")));
     s.set_deps_command(ss(deps::install::install_command(r.family(), &pkgs)

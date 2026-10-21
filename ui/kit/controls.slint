@@ -69,6 +69,42 @@ export component Button inherits Rectangle {
     FocusRing { w: root.width; h: root.height; show: fs.has-focus && fs.enabled; }
 }
 
+// Button that puts `copy-text` on the clipboard. Slint has no clipboard API, so it goes
+// through a hidden read-only TextInput: select all, copy.
+export component CopyButton inherits Rectangle {
+    in property <string> text: "Copy list";
+    in property <string> copy-text;
+    in property <bool> enabled: true;
+    property <bool> copied;
+
+    HorizontalLayout {
+        Button {
+            text: root.copied ? "Copied" : root.text;
+            icon: root.copied ? "check" : "copy";
+            enabled: root.enabled && root.copy-text != "";
+            clicked => {
+                buffer.select-all();
+                buffer.copy();
+                buffer.clear-selection();
+                root.copied = true;
+            }
+        }
+    }
+    buffer := TextInput {
+        visible: false;
+        width: 0px;
+        height: 0px;
+        read-only: true;
+        single-line: false;
+        text: root.copy-text;
+    }
+    Timer {
+        interval: 2s;
+        running: root.copied;
+        triggered => { root.copied = false; }
+    }
+}
+
 export component AccentButton inherits Rectangle {
     in property <string> text;
     in property <string> icon;

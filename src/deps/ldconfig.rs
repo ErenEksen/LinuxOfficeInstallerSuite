@@ -1,8 +1,10 @@
-//! Installed shared libraries from `ldconfig -p`, split into 64-bit and 32-bit sets (design D7).
+//! The loader cache as listed by `ldconfig -p`, split into 64-bit and 32-bit entries
+//! (design D7). One of the sources `loader::scan` searches.
 
 use std::collections::HashSet;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
+use super::maps::Bits;
 use crate::core::proc::{Cmd, capture, is_executable, which};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -11,31 +13,58 @@ pub struct LibSet {
     pub lib32: HashSet<String>,
 }
 
+impl LibSet {
+    pub fn insert(&mut self, name: &str, bits: Bits) {
+        match bits {
+            Bits::B64 => self.lib64.insert(name.to_string()),
+            Bits::B32 => self.lib32.insert(name.to_string()),
+        };
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.lib64.is_empty() && self.lib32.is_empty()
+    }
+}
+
+/// One `ldconfig -p` line.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Entry {
+    pub name: String,
+    pub bits: Bits,
+    pub path: PathBuf,
+}
+
 /// Parse `ldconfig -p`. Lines look like
 /// `\tlibzstd.so.1 (libc6,x86-64) => /usr/lib/libzstd.so.1`; a bare `(libc6)` tag (optionally
 /// followed by `, OS ABI: …`) marks a 32-bit x86 library. Other ABIs (x32, other arches) are ignored.
-pub fn parse(text: &str) -> LibSet {
-    let mut set = LibSet::default();
+pub fn parse_entries(text: &str) -> Vec<Entry> {
+    let mut out = Vec::new();
     for line in text.lines() {
         let line = line.trim();
         let Some((name, rest)) = line.split_once(" (") else { continue };
-        let Some((tag, _)) = rest.split_once(')') else { continue };
+        let Some((tag, rest)) = rest.split_once(')') else { continue };
         let mut parts = tag.split(',').map(str::trim);
         if parts.next() != Some("libc6") {
             continue;
         }
-        match parts.next() {
-            Some("x86-64") => {
-                set.lib64.insert(name.to_string());
-            }
-            None => {
-                set.lib32.insert(name.to_string());
-            }
-            Some(p) if p.starts_with("OS ABI") => {
-                set.lib32.insert(name.to_string());
-            }
-            _ => {}
-        }
+        let bits = match parts.next() {
+            Some("x86-64") => Bits::B64,
+            None => Bits::B32,
+            Some(p) if p.starts_with("OS ABI") => Bits::B32,
+            _ => continue,
+        };
+        let path = rest.split_once("=>").map(|(_, p)| PathBuf::from(p.trim())).unwrap_or_default();
+        out.push(Entry { name: name.to_string(), bits, path });
+    }
+    out
+}
+
+/// Every name in the listing, without looking at the files (fixture tests).
+#[cfg(test)]
+pub fn parse(text: &str) -> LibSet {
+    let mut set = LibSet::default();
+    for e in parse_entries(text) {
+        set.insert(&e.name, e.bits);
     }
     set
 }
@@ -50,24 +79,18 @@ fn ldconfig_path() -> Option<PathBuf> {
     })
 }
 
-/// Scan the system's library cache.
-pub fn scan() -> LibSet {
+/// The system's loader cache, or nothing when `ldconfig` is missing or fails (NixOS has no
+/// cache; musl's `ldconfig` has no `-p`).
+pub fn cache_entries() -> Vec<Entry> {
     let Some(ldconfig) = ldconfig_path() else {
-        log::warn!("ldconfig not found; every library will be reported missing");
-        return LibSet::default();
+        log::info!("ldconfig not found; searching the library directories only");
+        return Vec::new();
     };
     match capture(&Cmd::new(ldconfig).arg("-p").env("LC_ALL", "C")) {
-        Ok((_, out)) => {
-            let mut set = parse(&out);
-            // Wine's 32-bit loader is the ELF interpreter path itself; trust the file too.
-            if Path::new("/lib/ld-linux.so.2").exists() {
-                set.lib32.insert("ld-linux.so.2".into());
-            }
-            set
-        }
+        Ok((_, out)) => parse_entries(&out),
         Err(e) => {
-            log::warn!("ldconfig -p failed: {e}");
-            LibSet::default()
+            log::info!("ldconfig -p failed ({e}); searching the library directories only");
+            Vec::new()
         }
     }
 }
@@ -113,5 +136,11 @@ mod tests {
         assert!(s.lib32.contains("libfoo.so.1"));
         assert!(!s.lib32.contains("libbar.so.1") && !s.lib64.contains("libbar.so.1"));
         assert!(s.lib64.contains("libbaz.so.2"));
+    }
+
+    #[test]
+    fn entries_keep_paths() {
+        let e = parse_entries("\tlibfoo.so.1 (libc6,x86-64) => /usr/lib/libfoo.so.1\n");
+        assert_eq!(e, [Entry { name: "libfoo.so.1".into(), bits: Bits::B64, path: "/usr/lib/libfoo.so.1".into() }]);
     }
 }

@@ -76,6 +76,12 @@ export global AppState {
     in property <string> repo-instructions;
     in property <bool> deps-can-auto-install;
     in property <string> deps-error;
+    // No library could be found at all (NixOS, Guix, musl, no loader cache).
+    in property <bool> deps-undetected;
+    in property <string> deps-undetected-title;
+    in property <string> deps-undetected-message;
+    // Missing (or, when undetected, required) items and the install command, for the Copy button.
+    in property <string> deps-copy-text;
     callback check-deps();
     callback install-packages();
 

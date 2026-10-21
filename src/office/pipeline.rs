@@ -323,6 +323,9 @@ fn stage_deps(ctx: &mut Ctx) -> Result<(), Fail> {
         let names: Vec<&str> = report.optional_missing.iter().map(|m| m.name.as_str()).collect();
         ctx.log.line(&format!("optional, not needed for Office: {}", names.join(", ")));
     }
+    if let Some(u) = report.undetected {
+        return Err(Fail::msg(format!("{}.\n\n{}", u.title(), u.message())));
+    }
     if report.ready() {
         return Ok(());
     }

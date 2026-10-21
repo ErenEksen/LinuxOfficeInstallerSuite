@@ -14,6 +14,8 @@
       # Libraries Wine needs to start, draw windows and run Office, on both widths.
       # This is the same soname set the app checks for in src/deps/maps.rs, plus the
       # usual Wine extras that Bottles' FHS environment carries.
+      # `cargo test flake_provides_every_required_package` fails when an entry of
+      # REQUIRED (its `nix` field) or a TOOLS package is missing here or in targetPkgs.
       winePkgs =
         pkgs: with pkgs; [
           # src/deps/maps.rs REQUIRED
