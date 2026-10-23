@@ -81,7 +81,8 @@ fn menubuilder_off() -> Vec<(String, String, RegData)> {
 }
 
 /// The prefix setup steps in recipe order: create, win7, fonts, redistributables, DLL
-/// overrides, graphics, then the web components for Office's sign-in window, and win10.
+/// overrides, graphics, the web components for Office's sign-in window, win10, then the
+/// WebView2 Runtime.
 /// Steps added later run on their own in prefixes set up before them.
 pub fn setup_steps<'a>() -> Vec<Step<PrefixCtx<'a>>> {
     let mut v: Vec<Step<PrefixCtx<'a>>> = Vec::new();
@@ -156,6 +157,11 @@ pub fn setup_steps<'a>() -> Vec<Step<PrefixCtx<'a>>> {
         (c.report)(Report::Progress(None));
         web::register_mshtml(&c.wine, c.log, c.cancel)
     }));
+    v.push(Step::new("win10", "Set Windows version to Windows 10", |c: &mut PrefixCtx| {
+        c.set_version(WinVersion::Win10)?;
+        c.exec(&c.wine.wineserver_wait())
+    }));
+    // After win10: WebView2 Runtime releases past 109 refuse Windows 7 (exit code 2, 0x80040902).
     v.push(Step::new("webview2", "Install Microsoft Edge WebView2 Runtime", |c: &mut PrefixCtx| {
         if web::webview2_installed(&c.wine) {
             return Ok(());
@@ -163,10 +169,6 @@ pub fn setup_steps<'a>() -> Vec<Step<PrefixCtx<'a>>> {
         let installer = c.fetch(&web::WEBVIEW2, "webview2")?;
         (c.report)(Report::Progress(None));
         web::install_webview2(&c.wine, &installer, c.log, c.cancel)
-    }));
-    v.push(Step::new("win10", "Set Windows version to Windows 10", |c: &mut PrefixCtx| {
-        c.set_version(WinVersion::Win10)?;
-        c.exec(&c.wine.wineserver_wait())
     }));
     v
 }
@@ -217,7 +219,7 @@ mod tests {
             ids,
             [
                 "create", "win7", "fonts", "win7sp1", "msxml6", "riched20", "msls31", "cmd", "overrides", "dxvk", "graphics", "gecko",
-                "mshtml", "webview2", "win10"
+                "mshtml", "win10", "webview2"
             ]
         );
     }
