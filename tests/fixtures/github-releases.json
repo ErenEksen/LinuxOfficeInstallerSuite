@@ -1,5 +1,141 @@
 [
  {
+  "tag_name": "soda-11.0-36-experimental",
+  "name": "Soda 11.0-36-experimental - Windows Escape",
+  "draft": false,
+  "prerelease": true,
+  "published_at": "2026-10-28T19:17:41Z",
+  "assets": [
+   {
+    "name": "SHA256SUMS",
+    "size": 442,
+    "browser_download_url": "https://github.com/bottlesdevs/wine/releases/download/soda-11.0-36-experimental/SHA256SUMS"
+   },
+   {
+    "name": "soda-11.0-36-experimental-aarch64-symbols.tar.xz",
+    "size": 351012716,
+    "browser_download_url": "https://github.com/bottlesdevs/wine/releases/download/soda-11.0-36-experimental/soda-11.0-36-experimental-aarch64-symbols.tar.xz"
+   },
+   {
+    "name": "soda-11.0-36-experimental-aarch64.tar.xz",
+    "size": 234084456,
+    "browser_download_url": "https://github.com/bottlesdevs/wine/releases/download/soda-11.0-36-experimental/soda-11.0-36-experimental-aarch64.tar.xz"
+   },
+   {
+    "name": "soda-11.0-36-experimental-x86_64-symbols.tar.xz",
+    "size": 260898624,
+    "browser_download_url": "https://github.com/bottlesdevs/wine/releases/download/soda-11.0-36-experimental/soda-11.0-36-experimental-x86_64-symbols.tar.xz"
+   },
+   {
+    "name": "soda-11.0-36-experimental-x86_64.tar.xz",
+    "size": 226533840,
+    "browser_download_url": "https://github.com/bottlesdevs/wine/releases/download/soda-11.0-36-experimental/soda-11.0-36-experimental-x86_64.tar.xz"
+   }
+  ]
+ },
+ {
+  "tag_name": "soda-11.0-35-experimental",
+  "name": "Soda 11.0-35-experimental - Windows Escape",
+  "draft": false,
+  "prerelease": true,
+  "published_at": "2026-10-26T14:17:07Z",
+  "assets": [
+   {
+    "name": "SHA256SUMS",
+    "size": 442,
+    "browser_download_url": "https://github.com/bottlesdevs/wine/releases/download/soda-11.0-35-experimental/SHA256SUMS"
+   },
+   {
+    "name": "soda-11.0-35-experimental-aarch64-symbols.tar.xz",
+    "size": 345169608,
+    "browser_download_url": "https://github.com/bottlesdevs/wine/releases/download/soda-11.0-35-experimental/soda-11.0-35-experimental-aarch64-symbols.tar.xz"
+   },
+   {
+    "name": "soda-11.0-35-experimental-aarch64.tar.xz",
+    "size": 228519728,
+    "browser_download_url": "https://github.com/bottlesdevs/wine/releases/download/soda-11.0-35-experimental/soda-11.0-35-experimental-aarch64.tar.xz"
+   },
+   {
+    "name": "soda-11.0-35-experimental-x86_64-symbols.tar.xz",
+    "size": 259690084,
+    "browser_download_url": "https://github.com/bottlesdevs/wine/releases/download/soda-11.0-35-experimental/soda-11.0-35-experimental-x86_64-symbols.tar.xz"
+   },
+   {
+    "name": "soda-11.0-35-experimental-x86_64.tar.xz",
+    "size": 223492260,
+    "browser_download_url": "https://github.com/bottlesdevs/wine/releases/download/soda-11.0-35-experimental/soda-11.0-35-experimental-x86_64.tar.xz"
+   }
+  ]
+ },
+ {
+  "tag_name": "soda-11.0-34-experimental",
+  "name": "Soda 11.0-34-experimental - Windows Escape",
+  "draft": false,
+  "prerelease": true,
+  "published_at": "2026-10-25T16:43:09Z",
+  "assets": [
+   {
+    "name": "SHA256SUMS",
+    "size": 442,
+    "browser_download_url": "https://github.com/bottlesdevs/wine/releases/download/soda-11.0-34-experimental/SHA256SUMS"
+   },
+   {
+    "name": "soda-11.0-34-experimental-aarch64-symbols.tar.xz",
+    "size": 345126060,
+    "browser_download_url": "https://github.com/bottlesdevs/wine/releases/download/soda-11.0-34-experimental/soda-11.0-34-experimental-aarch64-symbols.tar.xz"
+   },
+   {
+    "name": "soda-11.0-34-experimental-aarch64.tar.xz",
+    "size": 228537668,
+    "browser_download_url": "https://github.com/bottlesdevs/wine/releases/download/soda-11.0-34-experimental/soda-11.0-34-experimental-aarch64.tar.xz"
+   },
+   {
+    "name": "soda-11.0-34-experimental-x86_64-symbols.tar.xz",
+    "size": 259646620,
+    "browser_download_url": "https://github.com/bottlesdevs/wine/releases/download/soda-11.0-34-experimental/soda-11.0-34-experimental-x86_64-symbols.tar.xz"
+   },
+   {
+    "name": "soda-11.0-34-experimental-x86_64.tar.xz",
+    "size": 223457656,
+    "browser_download_url": "https://github.com/bottlesdevs/wine/releases/download/soda-11.0-34-experimental/soda-11.0-34-experimental-x86_64.tar.xz"
+   }
+  ]
+ },
+ {
+  "tag_name": "soda-11.0-33-experimental",
+  "name": "Soda 11.0-33-experimental - Windows Escape",
+  "draft": false,
+  "prerelease": true,
+  "published_at": "2026-10-24T05:14:15Z",
+  "assets": [
+   {
+    "name": "SHA256SUMS",
+    "size": 442,
+    "browser_download_url": "https://github.com/bottlesdevs/wine/releases/download/soda-11.0-33-experimental/SHA256SUMS"
+   },
+   {
+    "name": "soda-11.0-33-experimental-aarch64-symbols.tar.xz",
+    "size": 354338664,
+    "browser_download_url": "https://github.com/bottlesdevs/wine/releases/download/soda-11.0-33-experimental/soda-11.0-33-experimental-aarch64-symbols.tar.xz"
+   },
+   {
+    "name": "soda-11.0-33-experimental-aarch64.tar.xz",
+    "size": 235211932,
+    "browser_download_url": "https://github.com/bottlesdevs/wine/releases/download/soda-11.0-33-experimental/soda-11.0-33-experimental-aarch64.tar.xz"
+   },
+   {
+    "name": "soda-11.0-33-experimental-x86_64-symbols.tar.xz",
+    "size": 263499736,
+    "browser_download_url": "https://github.com/bottlesdevs/wine/releases/download/soda-11.0-33-experimental/soda-11.0-33-experimental-x86_64-symbols.tar.xz"
+   },
+   {
+    "name": "soda-11.0-33-experimental-x86_64.tar.xz",
+    "size": 227182936,
+    "browser_download_url": "https://github.com/bottlesdevs/wine/releases/download/soda-11.0-33-experimental/soda-11.0-33-experimental-x86_64.tar.xz"
+   }
+  ]
+ },
+ {
   "tag_name": "soda-11.0-32-experimental",
   "name": "Soda 11.0-32-experimental - Windows Escape",
   "draft": false,

@@ -185,7 +185,7 @@ fn push_form(w: &AppWindow, ctx: &Ctx) {
     s.set_apps(model(
         OfficeApp::ALL
             .iter()
-            .map(|a| AppChoice { label: ss(a.label()), note: ss(a.known_issue().unwrap_or("")), checked: d.includes(*a) })
+            .map(|a| AppChoice { label: ss(a.label()), checked: d.includes(*a) })
             .collect(),
     ));
     s.set_match_os(d.match_os);

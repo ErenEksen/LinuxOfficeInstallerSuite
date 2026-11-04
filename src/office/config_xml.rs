@@ -86,16 +86,6 @@ impl OfficeApp {
     pub fn default_selected(self) -> bool {
         !matches!(self, OfficeApp::OneDrive | OfficeApp::Teams | OfficeApp::Skype)
     }
-
-    /// Short note shown next to apps with known problems under Wine (bottlesdevs/programs#500).
-    pub fn known_issue(self) -> Option<&'static str> {
-        match self {
-            OfficeApp::Outlook => Some("Known issues: classic Outlook may not start or sync under Wine."),
-            OfficeApp::PowerPoint => Some("Known issues: adding a new slide can crash PowerPoint."),
-            OfficeApp::OneNote => Some("Known issues: OneNote sync and rendering are unreliable."),
-            _ => None,
-        }
-    }
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
