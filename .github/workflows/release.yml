@@ -73,10 +73,10 @@ jobs:
         run: |
           gh release delete latest --yes --cleanup-tag || true
           gh release create latest "$ASSET" "$ASSET.sha256" "$APPIMAGE" "$APPIMAGE.sha256" \
-            --prerelease \
+            --latest \
             --target "$GITHUB_SHA" \
             --title "Latest build" \
-            --notes "Built automatically from ${GITHUB_SHA::7} on main. Experimental: not ready for production."
+            --notes "Built automatically from ${GITHUB_SHA::7} on main."
 
       - name: Publish the tagged release
         if: startsWith(github.ref, 'refs/tags/v')
