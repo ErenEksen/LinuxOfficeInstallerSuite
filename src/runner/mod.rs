@@ -124,5 +124,6 @@ mod tests {
         for old in ["soda-11.0-31-experimental", "soda-11.0-9-experimental", "soda-10.9-40", "soda-9.0-1", "wine-ge-8", "soda-x", ""] {
             assert!(!supports_office(old), "{old}");
         }
+        assert!(supports_office(DEFAULT_RUNNER), "the default runner must run Office");
     }
 }

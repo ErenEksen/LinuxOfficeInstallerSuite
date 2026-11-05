@@ -205,13 +205,6 @@ export component InstallPage inherits Rectangle {
                             width: 200px;
                             toggled(v) => { AppState.set-app(i, v); }
                         }
-                        if app.note != "": Text {
-                            text: app.note;
-                            font-size: Theme.caption;
-                            color: Theme.caution;
-                            vertical-alignment: center;
-                            wrap: word-wrap;
-                        }
                     }
                 }
             }

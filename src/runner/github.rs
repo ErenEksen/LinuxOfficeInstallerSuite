@@ -10,7 +10,7 @@ use crate::core::time::utc_parts;
 
 pub const API_URL: &str = "https://api.github.com/repos/bottlesdevs/wine/releases";
 pub const DOWNLOAD_BASE: &str = "https://github.com/bottlesdevs/wine/releases/download";
-pub const DEFAULT_RUNNER: &str = "soda-11.0-32-experimental";
+pub const DEFAULT_RUNNER: &str = "soda-11.0-36-experimental";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Release {
@@ -165,12 +165,12 @@ mod tests {
     fn parses_recorded_api_json() {
         let list = parse_releases(FIXTURE).unwrap();
         assert!(list.iter().all(|r| r.tag.starts_with("soda-")), "caffe is filtered out");
-        assert_eq!(list[0].tag, "soda-11.0-32-experimental");
+        assert_eq!(list[0].tag, "soda-11.0-36-experimental");
         assert!(list[0].prerelease);
-        assert_eq!(list[0].date, "2026-10-17");
-        assert_eq!(list[0].archive_name, "soda-11.0-32-experimental-x86_64.tar.xz");
+        assert_eq!(list[0].date, "2026-10-28");
+        assert_eq!(list[0].archive_name, "soda-11.0-36-experimental-x86_64.tar.xz");
         assert!(list[0].sums_url.as_deref().unwrap().ends_with("/SHA256SUMS"));
-        assert_eq!(list[1].tag, "soda-11.0-31-experimental");
+        assert_eq!(list[1].tag, "soda-11.0-35-experimental");
         assert!(list.windows(2).all(|w| w[0].published_at >= w[1].published_at), "newest first");
         let old = list.iter().find(|r| r.tag == "soda-11.0-25-experimental").unwrap();
         assert!(old.sums_url.is_none());
@@ -205,7 +205,7 @@ mod tests {
         srv.route("/releases?per_page=100&page=1", Route::ok(FIXTURE));
         let url = format!("{}/releases", srv.base);
         let list = fetch_releases(&http_client(), &url).unwrap();
-        assert_eq!(list[0].tag, "soda-11.0-32-experimental");
+        assert_eq!(list[0].tag, "soda-11.0-36-experimental");
     }
 
     /// `cargo test -- --ignored live_github` lists real releases.
